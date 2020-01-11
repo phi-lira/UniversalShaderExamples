@@ -31,6 +31,9 @@ struct Varyings
     float4 positionCS               : SV_POSITION;
 };
 
+void InitializeSurfaceData(Varyings IN, out SurfaceData s);
+half4 CustomLighting(SurfaceData s, half3 viewDirectionWS, Light light);
+
 Varyings CustomLightingVertex(Attributes input)
 {
     Varyings output;

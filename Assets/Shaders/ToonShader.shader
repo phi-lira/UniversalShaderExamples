@@ -51,22 +51,6 @@
             #pragma shader_feature SHADOWED_RIM
             #pragma shader_feature _NORMALMAP
 
-            // -------------------------------------
-            // Universal Render Pipeline keywords
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
-            #pragma multi_compile _ _SHADOWS_SOFT
-            #pragma multi_compile _ _MIXED_LIGHTING_SUBTRACTIVE
-            #pragma multi_compile _ DIRLIGHTMAP_COMBINED
-            #pragma multi_compile _ LIGHTMAP_ON
-            #pragma multi_compile_fog
-
-            #pragma vertex CustomLightingVertex
-            #pragma fragment CustomLightingFragment
-
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            
             CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST;
             half4 _BaseColor;
@@ -94,6 +78,8 @@
                 half alpha;
             };
 
+            #include "CustomShading.hlsl"
+            
             // Function to initialize surface data from interpolators
             void InitializeSurfaceData(Varyings IN, out SurfaceData s)
             {
@@ -138,8 +124,6 @@
                 c.a = s.alpha;
                 return c;
             }
-
-            #include "CustomShading.hlsl"
             ENDHLSL
         }
 
@@ -147,4 +131,21 @@
         UsePass "Universal Render Pipeline/Lit/DepthOnly"
         UsePass "Universal Render Pipeline/Lit/Meta"
     }
+
+    HLSLINCLUDE
+    // -------------------------------------
+    // Universal Render Pipeline keywords
+    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
+    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+    #pragma multi_compile _ _SHADOWS_SOFT
+    #pragma multi_compile _ _MIXED_LIGHTING_SUBTRACTIVE
+    #pragma multi_compile _ DIRLIGHTMAP_COMBINED
+    #pragma multi_compile _ LIGHTMAP_ON
+    #pragma multi_compile_fog
+
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+    #pragma vertex CustomLightingVertex
+    #pragma fragment CustomLightingFragment
+
+    ENDHLSL
 }
