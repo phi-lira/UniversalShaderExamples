@@ -1,7 +1,8 @@
-﻿Library/Artifacts
+Library/Artifacts
 Library
 UserSettings
 *.sln
 *.csproj
 Temp
 Logs
+.idea
