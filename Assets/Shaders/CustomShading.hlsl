@@ -98,4 +98,39 @@ half4 CustomLightingFragment(Varyings input) : SV_Target
     return color;
 }
 
+// half DGGX(half NoH, half roughness)
+// {
+//     half a = NoH * roughness;
+//     half k = roughness / (1.0  - NoH * NoH + a * a);
+//     return k * k * (1.0 / PI);
+// }
+
+// half VSmithGGXCorrelated(half NoV, half NoL, half roughness)
+// {
+//     half a2 = roughness * roughness;
+//     half v = NoL * sqrt(NoV * NoV * (1.0 - a2) + a2);
+//     half l = NoV * sqrt(NoL * NoL * (1.0 - a2) + a2);
+//     return 0.5 / (v + l);
+// }
+
+// half FSchlick(half VoH, half3 f0)
+// {
+//     half f = Pow5(1.0 - VoH);
+//     return f + f0 * (1.0 - f);
+// }
+
+// half DiffuseBRDF()
+// {
+//     return 1.0 / PI;
+// }
+
+// half BRDF(half NoH, half NoV, half NoL, half VoH, half4 f0, half rougness)
+// {
+//     return DGGX(NoH, roughness) +
+//             VSmithGGXCorrelated(NoV, NoL, roughness) + 
+//             FSchlick(VoH, f0);
+// }
+
+
+
 #endif

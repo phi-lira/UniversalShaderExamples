@@ -6,3 +6,4 @@ UserSettings
 Temp
 Logs
 .idea
+*.cache
