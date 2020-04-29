@@ -8,94 +8,87 @@ struct Attributes
     float4 positionOS   : POSITION;
     float3 normalOS     : NORMAL;
     float4 tangentOS    : TANGENT;
+
     float2 uv           : TEXCOORD0;
-    float2 uvLM         : TEXCOORD1;
+#if LIGHTMAP_ON
+    float2 uvLightmap   : TEXCOORD1;
+#endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct Varyings
 {
     float2 uv                       : TEXCOORD0;
-    float2 uvLM                     : TEXCOORD1;
-    float4 positionWSAndFogFactor   : TEXCOORD2; // xyz: positionWS, w: vertex fog factor
+#if LIGHTMAP_ON
+    float2 uvLightmap               : TEXCOORD1;
+#endif
+    float3 positionWS               : TEXCOORD2;
     half3  normalWS                 : TEXCOORD3;
 
 #ifdef _NORMALMAP
     half3 tangentWS                 : TEXCOORD4;
-    half3 bitangentWS               : TEXCOORD5;
 #endif
 
-#ifdef _MAIN_LIGHT_SHADOWS
-    float4 shadowCoord              : TEXCOORD6; // compute shadow coord per-vertex for the main light
-#endif
     float4 positionCS               : SV_POSITION;
 };
 
 void InitializeSurfaceData(Varyings IN, out SurfaceData s);
 half4 CustomLighting(SurfaceData s, half3 viewDirectionWS, Light light);
 
-Varyings CustomLightingVertex(Attributes input)
+// Convert normal from tangent space to space of TBN matrix
+// f.ex, if normal and tangent are passed in world space, per-pixel normal will return in world space.
+half3 GetPerPixelNormal(TEXTURE2D_PARAM(normalMap, sampler_NormalMap), float2 uv, half3 normal, half4 tangent)
 {
-    Varyings output;
+    float3 bitangent = cross(normal, tangent.xyz) * tangent.w;
+    float3 normalTS = UnpackNormal(SAMPLE_TEXTURE2D(normalMap, sampler_NormalMap, uv));
+    return normalize(mul(normalTS, half3x3(tangent.xyz, bitangent, normal)));
+}
+
+Varyings CustomLightingVertex(Attributes IN)
+{
+    Varyings OUT;
 
     // VertexPositionInputs contains position in multiple spaces (world, view, homogeneous clip space)
-    // Our compiler will strip all unused references (say you don't use view space).
+    // The compiler will strip all unused references.
     // Therefore there is more flexibility at no additional cost with this struct.
-    VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
+    VertexPositionInputs vertexInput = GetVertexPositionInputs(IN.positionOS.xyz);
 
     // Similar to VertexPositionInputs, VertexNormalInputs will contain normal, tangent and bitangent
     // in world space. If not used it will be stripped.
-    VertexNormalInputs vertexNormalInput = GetVertexNormalInputs(input.normalOS, input.tangentOS);
+    VertexNormalInputs vertexNormalInput = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
 
-    // Computes fog factor per-vertex.
-    float fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
+    OUT.uv = IN.uv;
 
-    // TRANSFORM_TEX is the same as the old shader library.
-    output.uv = input.uv;
-    output.uvLM = input.uvLM.xy * unity_LightmapST.xy + unity_LightmapST.zw;
+#if LIGHTMAP_ON
+    OUT.uvLightmap = IN.uvLightmap.xy * unity_LightmapST.xy + unity_LightmapST.zw;
+#endif
 
-    output.positionWSAndFogFactor = float4(vertexInput.positionWS, fogFactor);
-    output.normalWS = vertexNormalInput.normalWS;
+    OUT.positionWS = vertexInput.positionWS;
+    OUT.normalWS = vertexNormalInput.normalWS;
 
-    // Here comes the flexibility of the input structs.
-    // In the variants that don't have normal map defined
-    // tangentWS and bitangentWS will not be referenced and
-    // GetVertexNormalInputs is only converting normal
-    // from object to world space
 #ifdef _NORMALMAP
-    output.tangentWS = vertexNormalInput.tangentWS;
-    output.bitangentWS = vertexNormalInput.bitangentWS;
+    // tangentOS.w contains the normal sign used to construct mikkTSpace
+    // We compute bitangent per-pixel to match convertion of Unity SRP.
+    // https://medium.com/@bgolus/generating-perfect-normal-maps-for-unity-f929e673fc57
+    OUT.tangentWS = float4(vertexNormalInput.tangentWS, IN.tangentOS.w * GetOddNegativeScale());
 #endif
 
-#ifdef _MAIN_LIGHT_SHADOWS
-    output.shadowCoord = GetShadowCoord(vertexInput);
-#endif
-    // We just use the homogeneous clip position from the vertex input
-    output.positionCS = vertexInput.positionCS;
-    return output;
+    OUT.positionCS = vertexInput.positionCS;
+    return OUT;
 }
 
-half4 CustomLightingFragment(Varyings input) : SV_Target
+half4 CustomLightingFragment(Varyings IN) : SV_Target
 {
     SurfaceData surfaceData;
-    InitializeSurfaceData(input, surfaceData);
+    InitializeSurfaceData(IN, surfaceData);
 
-#ifdef _MAIN_LIGHT_SHADOWS
-    Light mainLight = GetMainLight(input.shadowCoord);
-#else
-    Light mainLight = GetMainLight();
-#endif
-
-    float3 positionWS = input.positionWSAndFogFactor.xyz;
-    half3 viewDirectionWS = SafeNormalize(GetCameraPositionWS() - positionWS);
-    float fogFactor = input.positionWSAndFogFactor.w;
-
-    half4 color = CustomLighting(surfaceData, viewDirectionWS, mainLight);
-
-    // Mix the pixel color with fogColor. You can optionaly use MixFogColor to override the fogColor
-    // with a custom one.
-    color.rgb = MixFog(color.rgb, fogFactor);
-    return color;
+    // shadowCoord is position in shadow light space
+    float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
+    Light mainLight = GetMainLight(shadowCoord);
+    
+    half3 viewDirectionWS = SafeNormalize(GetCameraPositionWS() - IN.positionWS);
+    
+    return CustomLighting(surfaceData, viewDirectionWS, mainLight);
 }
 
 // half DGGX(half NoH, half roughness)
