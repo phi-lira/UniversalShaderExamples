@@ -74,23 +74,33 @@ half3 GetPerPixelNormal(TEXTURE2D_PARAM(normalMap, sampler_NormalMap), float2 uv
     return normalize(mul(normalTS, half3x3(tangent.xyz, bitangent, normal)));
 }
 
+// Adapted from Unity Environment BDRF Approximation
+half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
+{
+    half fresnelTerm = Pow4(1.0 - NdotV);
+    half grazingTerm = saturate((1.0 - roughness) + f0);
+
+    // surfaceReduction = Int D(NdotH) * NdotH * Id(NdotL>0) dH = 1/(roughness^2+1)
+    half surfaceReduction = 1.0 / (roughness * roughness + 1.0);
+    return lerp(f0, grazingTerm, fresnelTerm) * surfaceReduction;
+}
+
 #ifdef CUSTOM_LIGHTING_FUNCTION
     half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData);
 #else
     #define CUSTOM_LIGHTING_FUNCTION StandardLighting
     half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData)
     {
-        half fresnelTerm = Pow4(1.0 - lightingData.NdotV);
-        half reflectivity = 1;//lerp(0.04, 1, metallic);
-        half grazingTerm = saturate((1.0 - surfaceData.roughness) + reflectivity);
-
         half3 environmentReflection = lightingData.environmentReflections;
-        environmentReflection *= (lerp(surfaceData.f0, grazingTerm, fresnelTerm)) / (surfaceData.roughness * surfaceData.roughness + 1.0);
+        environmentReflection *= EnvironmentBRDF(surfaceData.f0, surfaceData.roughness, lightingData.NdotV);
 
         half3 environmentLighting = lightingData.environmentLighting * surfaceData.diffuse;
 
-        // color = (diffuseColor * Lambert + f0 * CookTorrace) * lightIrradiance * NdotL;
-        half3 diffuse = surfaceData.diffuse * Lambert();
+        half3 diffuse = surfaceData.diffuse * LambertNoPI();
+        
+        // CookTorrance
+        // Note: D and V can be optimized by being combined together. I leave it here separate to
+        // improve readability, for future I want to add an optimized version with the optmized version / comments?
         half  D = D_GGXNoPI(lightingData.NdotH, surfaceData.roughness);
         half  V = V_SmithJointGGX(lightingData.NdotL, lightingData.NdotV, surfaceData.roughness);
         half3 F = F_Schlick(surfaceData.f0, lightingData.VdotH);

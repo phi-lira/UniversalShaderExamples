@@ -36,7 +36,7 @@
             struct Varyings
             {
                 float2 uv           : TEXCOORD0;
-                float3 positionWS    : TEXCOORD1;
+                float3 positionWS   : TEXCOORD1;
                 float4 positionHCS  : SV_POSITION;
             };
 
@@ -73,6 +73,9 @@
         }
 
         // Used for rendering shadowmaps
+        // TODO: there's one issue with adding this UsePass here, it won't make this shader compatible with SRP Batcher
+        // as the ShadowCaster pass from Lit shader is using a different UnityPerMaterial CBUFFER. 
+        // Maybe we should add a DECLARE_PASS macro that allows to user to inform the UnityPerMaterial CBUFFER to use?
         UsePass "Universal Render Pipeline/Lit/ShadowCaster"
     }
 }
