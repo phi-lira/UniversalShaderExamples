@@ -33,10 +33,6 @@ struct Varyings
     float4 positionCS               : SV_POSITION;
 };
 
-#ifndef CUSTOM_SURFACE_DATA
-#define CUSTOM_SURFACE_DATA
-#endif
-
 // User defined surface data.
 struct SurfaceData
 {
@@ -47,7 +43,6 @@ struct SurfaceData
     half  roughness;    // roughness
     half3 emission;     // emissive color
     half  alpha;        // 0 for transparent materials, 1.0 for opaque.
-    CUSTOM_SURFACE_DATA // User defined custom surface data
 };
 
 struct LightingData 
@@ -96,15 +91,13 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
 
         half3 environmentLighting = lightingData.environmentLighting * surfaceData.diffuse;
 
-        half3 diffuse = surfaceData.diffuse * LambertNoPI();
+        half3 diffuse = surfaceData.diffuse * Lambert();
         
         // CookTorrance
-        // Note: D and V can be optimized by being combined together. I leave it here separate to
-        // improve readability, for future I want to add an optimized version with the optmized version / comments?
-        half  D = D_GGXNoPI(lightingData.NdotH, surfaceData.roughness);
-        half  V = V_SmithJointGGX(lightingData.NdotL, lightingData.NdotV, surfaceData.roughness);
+        // inline D_GGX + V_SmithJoingGGX for better code generations
+        half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, surfaceData.roughness);
         half3 F = F_Schlick(surfaceData.f0, lightingData.VdotH);
-        half3 specular = D * V * F;
+        half3 specular = DV * F;
         half3 finalColor = (diffuse + specular) * lightingData.light.color * lightingData.NdotL;
         finalColor += environmentReflection + environmentLighting;
         return half4(finalColor, surfaceData.alpha);

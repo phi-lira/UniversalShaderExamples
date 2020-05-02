@@ -4,9 +4,12 @@
     // scale/offset for normal map using NoScaleOffset.
     Properties
     {
-        [MainColor] _BaseColor("Color", Color) = (1, 1, 1,1)
-        [MainTexture] _BaseMap("Albedo", 2D) = "white" {}
-        [Normal]_NormalMap("Normal", 2D) = "bump" {}
+        [Header(Surface)]
+        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
+        [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
+
+        [Toggle(_MASKMAP)]_EnableMaskMap("Metallic and Smoothness Map", Float) = 0.0
+        _MaskMap("Metallic + Smoothness", 2D) = "white" {} 
 
         // TODO: Pack the following into a half4 and add support to mask map
         // splitting now as I've not implemented custom shader editor yet and
@@ -15,7 +18,11 @@
         _AmbientOcclusion("AmbientOcclusion", Range(0, 1)) = 1.0
         _DieletricF0("Dieletric F0", Range(0.0, 0.16)) = 0.04
         _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
-        
+
+        [Header(Normals)]
+        [Toggle(_NORMALMAP)] _EnableNormalMap("PerPixelNormals", Float) = 0.0
+        [Normal][NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
+
         [Header(Emission)]
         [HDR]_Emission("Emission Color", Color) = (0,0,0,1)
     }
@@ -54,26 +61,36 @@
             // Textures are declared in global scope
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             TEXTURE2D(_NormalMap); SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_MaskMap);
+
+            #define CUSTOM_LIGHTING_FUNCTION MyCustomLightingFunction
 
             void SurfaceFunction(Varyings IN, out SurfaceData surfaceData)
             {
                 float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 
                 half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
+                half4 maskMap = half4(1, 1, 1, 1);
+#ifdef _MASKMAP
+                maskMap = SAMPLER_TEXTURE2D(_MaskMap, sampler_BaseMap, IN.uv);    
+#endif
+
+                half metallic = maskMap.r * _Metallic;
+                half roughness = PerceptualSmoothnessToRoughness(maskMap.a * _Smoothness);
                 
                 // diffuse color is black for metals and baseColor for dieletrics
-                surfaceData.diffuse = ComputeDiffuseColor(baseColor.rgb, _Metallic);
+                surfaceData.diffuse = ComputeDiffuseColor(baseColor.rgb, metallic);
 
                 // f0 is reflectance at normal incidence. we store f0 in baseColor for metals.
                 // for dieletrics f0 is monochromatic and stored in dieletricF0.                
-                surfaceData.f0 = ComputeFresnel0(baseColor.rgb, _Metallic, _DieletricF0);
+                surfaceData.f0 = ComputeFresnel0(baseColor.rgb, metallic, _DieletricF0);
                 surfaceData.ao = _AmbientOcclusion;
-                surfaceData.roughness = PerceptualSmoothnessToRoughness(_Smoothness);
-        #ifdef _NORMALMAP
+                surfaceData.roughness = roughness;
+#ifdef _NORMALMAP
                 surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
-        #else
+#else
                 surfaceData.normalWS = normalize(IN.normalWS);
-        #endif
+#endif
                 surfaceData.emission = _Emission.rgb;
                 surfaceData.alpha = baseColor.a;
             }
