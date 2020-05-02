@@ -21,10 +21,10 @@ Material:
     m_TexEnvs:
     - _BaseMap:
         m_Texture: {fileID: 2800000, guid: 44a19727c767e494db1cd3604f98d576, type: 3}
-        m_Scale: {x: 10, y: 10}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
-        m_Texture: {fileID: 2800000, guid: 01c3c9f4f8f204b5eb2ca53a596aeaab, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
@@ -42,7 +42,6 @@ Material:
     m_Colors:
     - _BaseColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
     - _Emission: {r: 0, g: 0, b: 0, a: 1}
-  m_BuildTextureStacks: []
 --- !u!114 &7017825111196047562
 MonoBehaviour:
   m_ObjectHideFlags: 11

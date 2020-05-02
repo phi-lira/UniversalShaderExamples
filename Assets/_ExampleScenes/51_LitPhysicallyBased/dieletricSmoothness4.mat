@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: dieletricSmoothness4
   m_Shader: {fileID: 4800000, guid: 50211223aa9fe48bcb8e1dfe5cd83cc7, type: 3}
-  m_ShaderKeywords: _MASKMAP
+  m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -21,10 +21,10 @@ Material:
     m_TexEnvs:
     - _BaseMap:
         m_Texture: {fileID: 2800000, guid: 021f9ef5df0a6475294e56b424e40803, type: 3}
-        m_Scale: {x: 10, y: 10}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
-        m_Texture: {fileID: 2800000, guid: be7c3dca5270248edb6075605fe15f0c, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
@@ -34,7 +34,7 @@ Material:
     m_Floats:
     - _AmbientOcclusion: 1
     - _DieletricF0: 0.5
-    - _EnableMaskMap: 1
+    - _EnableMaskMap: 0
     - _EnableNormalMap: 0
     - _Metallic: 0
     - _Reflectance: 0.5
@@ -42,7 +42,6 @@ Material:
     m_Colors:
     - _BaseColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
     - _Emission: {r: 0, g: 0, b: 0, a: 1}
-  m_BuildTextureStacks: []
 --- !u!114 &7017825111196047562
 MonoBehaviour:
   m_ObjectHideFlags: 11

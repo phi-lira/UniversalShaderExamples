@@ -8,9 +8,6 @@
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
         [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
 
-        [Toggle(_MASKMAP)]_EnableMaskMap("Enable Metallic and Smoothness", Float) = 0.0
-        _MaskMap("R:Metallic, A:Smoothness", 2D) = "white" {} 
-
         // TODO: Pack the following into a half4 and add support to mask map
         // splitting now as I've not implemented custom shader editor yet and
         // this will make it look nices in the UI
@@ -54,6 +51,9 @@
             Tags{"LightMode" = "UniversalForward"}
 
             HLSLPROGRAM
+            #pragma vertex SurfaceVertex
+            #pragma fragment SurfaceFragment
+
             // -------------------------------------
             // Material Keywords
             #pragma shader_feature _NORMALMAP
@@ -66,12 +66,9 @@
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile _ LIGHTMAP_ON
 
-            #pragma vertex CustomLightingVertex
-            #pragma fragment CustomLightingFragment
-
             // -------------------------------------
             // Include custom shading helper to create vertex and fragment functions
-            #include "CustomShading.hlsl"
+            #include "../CustomShading.hlsl"
 
             // -------------------------------------
             // Textures are declared in global scope
@@ -85,17 +82,12 @@
             {
                 float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 
-                half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
-                half4 maskMap = half4(1, 1, 1, 1);
-#ifdef _MASKMAP
-                maskMap = SAMPLER_TEXTURE2D(_MaskMap, sampler_BaseMap, IN.uv);    
-#endif
-
-                half metallic = maskMap.r * _Metallic;
+                half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+                half metallic = _Metallic;
 
                 // 0.089 perceptual roughness is the min value we can represent in fp16
                 // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
-                half perceptualRoughness = max(1.0 - (maskMap.a * _Smoothness), 0.089);
+                half perceptualRoughness = max(1.0 - _Smoothness, 0.089);
                 half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
                 
                 // diffuse color is black for metals and baseColor for dieletrics
@@ -114,7 +106,7 @@
                 surfaceData.normalWS = normalize(IN.normalWS);
 #endif
                 surfaceData.emission = _Emission.rgb;
-                surfaceData.alpha = baseColor.a;
+                surfaceData.alpha = 1.0;
             }
 
             ENDHLSL

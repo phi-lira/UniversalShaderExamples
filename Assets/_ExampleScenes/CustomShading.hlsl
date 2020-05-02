@@ -1,5 +1,5 @@
-﻿#ifndef CUSTOM_LIGHTING
-#define CUSTOM_LIGHTING
+﻿#ifndef CUSTOM_SHADING
+#define CUSTOM_SHADING
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -51,6 +51,7 @@ struct LightingData
     half3 environmentLighting;
     half3 environmentReflections;
     half3 halfVector;
+    half3 viewDirectionWS;
     half NdotL;
     half NdotV;
     half NdotH;
@@ -74,7 +75,7 @@ half3 GetPerPixelNormal(TEXTURE2D_PARAM(normalMap, sampler_NormalMap), float2 uv
 // Computes the world space view direction (pointing towards the viewer).
 float3 GetWorldSpaceViewDir(float3 positionWS)
 {
-    if (IsPerspectiveProjection())
+    if (unity_OrthoParams.w == 0)
     {
         // Perspective
         return _WorldSpaceCameraPos - positionWS;
@@ -102,7 +103,6 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
 #ifdef CUSTOM_LIGHTING_FUNCTION
     half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData);
 #else
-    #define CUSTOM_LIGHTING_FUNCTION StandardLighting
     half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData)
     {
         half3 environmentReflection = lightingData.environmentReflections;
@@ -123,7 +123,7 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
     }
 #endif
 
-Varyings CustomLightingVertex(Attributes IN)
+Varyings SurfaceVertex(Attributes IN)
 {
     Varyings OUT;
 
@@ -155,7 +155,7 @@ Varyings CustomLightingVertex(Attributes IN)
     return OUT;
 }
 
-half4 CustomLightingFragment(Varyings IN) : SV_Target
+half4 SurfaceFragment(Varyings IN) : SV_Target
 {
     SurfaceData surfaceData;
     SurfaceFunction(IN, surfaceData);
@@ -172,8 +172,9 @@ half4 CustomLightingFragment(Varyings IN) : SV_Target
     lightingData.environmentLighting = SAMPLE_GI(IN.uvLightmap, SampleSH(surfaceData.normalWS), surfaceData.normalWS) * surfaceData.ao;
     lightingData.environmentReflections = GlossyEnvironmentReflection(reflectVector, sqrt(surfaceData.roughness), surfaceData.ao);
     lightingData.halfVector = normalize(light.direction + viewDirectionWS);
+    lightingData.viewDirectionWS = viewDirectionWS;
     lightingData.NdotL = saturate(dot(surfaceData.normalWS, light.direction));
-    lightingData.NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
+    lightingData.NdotV = saturate(dot(surfaceData.normalWS, lightingData.viewDirectionWS)) + HALF_MIN;
     lightingData.NdotH = saturate(dot(surfaceData.normalWS, lightingData.halfVector));
     lightingData.VdotH = saturate(dot(viewDirectionWS, lightingData.halfVector));
 
