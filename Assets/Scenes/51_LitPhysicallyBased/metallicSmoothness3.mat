@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: metallicSmoothness3
   m_Shader: {fileID: 4800000, guid: 50211223aa9fe48bcb8e1dfe5cd83cc7, type: 3}
-  m_ShaderKeywords: 
+  m_ShaderKeywords: _NORMALMAP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -20,22 +20,22 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: c7dece3af22324452a0f9fe4aeb9d462, type: 3}
+        m_Texture: {fileID: 2800000, guid: 44a19727c767e494db1cd3604f98d576, type: 3}
         m_Scale: {x: 10, y: 10}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 01c3c9f4f8f204b5eb2ca53a596aeaab, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 181863303a65d499799a698b86d9085b, type: 3}
         m_Scale: {x: 0, y: 0}
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _AmbientOcclusion: 1
     - _DieletricF0: 0.04
     - _EnableMaskMap: 0
-    - _EnableNormalMap: 0
+    - _EnableNormalMap: 1
     - _Metallic: 1
     - _Reflectance: 0.5
     - _Smoothness: 0.7
