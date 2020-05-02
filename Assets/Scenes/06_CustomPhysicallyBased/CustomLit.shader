@@ -8,19 +8,18 @@
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
         [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
 
-        [Toggle(_MASKMAP)]_EnableMaskMap("Metallic and Smoothness Map", Float) = 0.0
-        _MaskMap("Metallic + Smoothness", 2D) = "white" {} 
+        [Toggle(_MASKMAP)]_EnableMaskMap("Enable Metallic and Smoothness", Float) = 0.0
+        _MaskMap("R:Metallic, A:Smoothness", 2D) = "white" {} 
 
         // TODO: Pack the following into a half4 and add support to mask map
         // splitting now as I've not implemented custom shader editor yet and
         // this will make it look nices in the UI
         _Metallic("Metallic", Range(0, 1)) = 1.0
         _AmbientOcclusion("AmbientOcclusion", Range(0, 1)) = 1.0
-        _DieletricF0("Dieletric F0", Range(0.0, 0.16)) = 0.04
+        _Reflectance("Reflectance for dieletrics", Range(0.0, 1.0)) = 0.5
         _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
 
-        [Header(Normals)]
-        [Toggle(_NORMALMAP)] _EnableNormalMap("PerPixelNormals", Float) = 0.0
+        [Toggle(_NORMALMAP)] _EnableNormalMap("Enable Normal Map", Float) = 0.0
         [Normal][NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
 
         [Header(Emission)]
@@ -52,7 +51,7 @@
             half4 _BaseColor;
             half _Metallic;
             half _AmbientOcclusion;
-            half _DieletricF0;
+            half _Reflectance;
             half _Smoothness;
             half4 _Emission;
             CBUFFER_END
@@ -76,14 +75,20 @@
 #endif
 
                 half metallic = maskMap.r * _Metallic;
-                half roughness = PerceptualSmoothnessToRoughness(maskMap.a * _Smoothness);
+
+                // 0.089 perceptual roughness is the min value we can represent in fp16
+                // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
+                half perceptualRoughness = max(1.0 - (maskMap.a * _Smoothness), 0.089);
+                half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
                 
                 // diffuse color is black for metals and baseColor for dieletrics
                 surfaceData.diffuse = ComputeDiffuseColor(baseColor.rgb, metallic);
 
                 // f0 is reflectance at normal incidence. we store f0 in baseColor for metals.
-                // for dieletrics f0 is monochromatic and stored in dieletricF0.                
-                surfaceData.f0 = ComputeFresnel0(baseColor.rgb, metallic, _DieletricF0);
+                // for dieletrics f0 is monochromatic and stored in reflectance value.
+                // Remap reflectance to range [0, 1] - 0.5 maps to 4%, 1.0 maps to 16% (gemstone)
+                // https://google.github.io/filament/Filament.html#materialsystem/parameterization/standardparameters               
+                surfaceData.reflectance = ComputeFresnel0(baseColor.rgb, metallic, _Reflectance * _Reflectance * 0.16);
                 surfaceData.ao = _AmbientOcclusion;
                 surfaceData.roughness = roughness;
 #ifdef _NORMALMAP

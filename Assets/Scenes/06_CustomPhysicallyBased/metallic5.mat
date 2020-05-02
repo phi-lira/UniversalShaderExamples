@@ -37,6 +37,7 @@ Material:
     - _EnableMaskMap: 0
     - _EnableNormalMap: 0
     - _Metallic: 0.5
+    - _Reflectance: 0.5
     - _Smoothness: 1
     m_Colors:
     - _BaseColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}

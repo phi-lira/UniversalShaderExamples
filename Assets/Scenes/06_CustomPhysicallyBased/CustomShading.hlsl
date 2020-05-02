@@ -37,7 +37,7 @@ struct Varyings
 struct SurfaceData
 {
     half3 diffuse;      // diffuse color. should be black for metals.
-    half3 f0;           // reflectance color at normal indicence. It's monochromatic for dieletrics.
+    half3 reflectance;  // reflectance color at normal indicence. It's monochromatic for dieletrics.
     half3 normalWS;     // normal in world space
     half  ao;           // ambient occlusion
     half  roughness;    // roughness
@@ -69,6 +69,25 @@ half3 GetPerPixelNormal(TEXTURE2D_PARAM(normalMap, sampler_NormalMap), float2 uv
     return normalize(mul(normalTS, half3x3(tangent.xyz, bitangent, normal)));
 }
 
+// defined in latest URP
+#if SHADER_LIBRARY_VERSION_MAJOR < 9
+// Computes the world space view direction (pointing towards the viewer).
+float3 GetWorldSpaceViewDir(float3 positionWS)
+{
+    if (IsPerspectiveProjection())
+    {
+        // Perspective
+        return _WorldSpaceCameraPos - positionWS;
+    }
+    else
+    {
+        // Orthographic
+        float4x4 viewMat = GetWorldToViewMatrix();
+        return viewMat[2].xyz;
+    }
+}
+#endif
+
 // Adapted from Unity Environment BDRF Approximation
 half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
 {
@@ -87,7 +106,7 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
     half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData)
     {
         half3 environmentReflection = lightingData.environmentReflections;
-        environmentReflection *= EnvironmentBRDF(surfaceData.f0, surfaceData.roughness, lightingData.NdotV);
+        environmentReflection *= EnvironmentBRDF(surfaceData.reflectance, surfaceData.roughness, lightingData.NdotV);
 
         half3 environmentLighting = lightingData.environmentLighting * surfaceData.diffuse;
 
@@ -96,7 +115,7 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
         // CookTorrance
         // inline D_GGX + V_SmithJoingGGX for better code generations
         half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, surfaceData.roughness);
-        half3 F = F_Schlick(surfaceData.f0, lightingData.VdotH);
+        half3 F = F_Schlick(surfaceData.reflectance, lightingData.VdotH);
         half3 specular = DV * F;
         half3 finalColor = (diffuse + specular) * lightingData.light.color * lightingData.NdotL;
         finalColor += environmentReflection + environmentLighting;
@@ -143,7 +162,7 @@ half4 CustomLightingFragment(Varyings IN) : SV_Target
 
     LightingData lightingData;
 
-    half3 viewDirectionWS = normalize(_WorldSpaceCameraPos - IN.positionWS);
+    half3 viewDirectionWS = normalize(GetWorldSpaceViewDir(IN.positionWS));
     half3 reflectVector = reflect(-viewDirectionWS, surfaceData.normalWS);
                 
     // shadowCoord is position in shadow light space

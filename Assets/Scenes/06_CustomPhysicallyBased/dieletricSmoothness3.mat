@@ -33,10 +33,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _AmbientOcclusion: 1
-    - _DieletricF0: 0.04
+    - _DieletricF0: 0.5
     - _EnableMaskMap: 0
     - _EnableNormalMap: 1
     - _Metallic: 0
+    - _Reflectance: 0.5
     - _Smoothness: 0.7
     m_Colors:
     - _BaseColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
