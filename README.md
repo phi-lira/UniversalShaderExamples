@@ -3,9 +3,10 @@
 #### Requisites:
 - Unity 2019.3.9f1 or later 
 - UniversalRP 7.3.1 or later
+- You need [git-lfs](https://git-lfs.github.com/) to download the large asset files. Most Git client UI comes with support to git-lfs.
 
 #### How to use this examples
-- Clone the repo/Download the zip down to your computer
+- Clone the repository. You must have git-lfs enabled.
 - Load in Unity.
 - Examples are located in `_ExampleScenes` folder. Each scene contains a different example bundled with shaders and materials.
 
