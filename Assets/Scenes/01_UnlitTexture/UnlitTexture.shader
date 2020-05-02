@@ -10,6 +10,18 @@
     {
         Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalRenderPipeline"}
 
+        // Include material cbuffer for all passes. 
+        // The cbuffer has to be the same for all passes to make this shader SRP batcher compatible.
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+        CBUFFER_START(UnityPerMaterial)
+        float4 _BaseMap_ST;
+        half4 _BaseColor;
+        CBUFFER_END
+
+        ENDHLSL
+
         Pass
         {
             Tags { "LightMode"="UniversalForward" }
@@ -18,8 +30,6 @@
             #pragma vertex vert
             #pragma fragment frag
             
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
             struct Attributes
             {
                 float4 positionOS   : POSITION;
@@ -34,11 +44,6 @@
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
-            
-            CBUFFER_START(UnityPerMaterial)
-            float4 _BaseMap_ST;
-            half4 _BaseColor;
-            CBUFFER_END
 
             Varyings vert(Attributes IN)
             {

@@ -1,4 +1,4 @@
-﻿Shader "Universal Render Pipeline/Custom/UnlitTextureShadows"
+﻿Shader "Universal Render Pipeline/Custom/ScreenSpaceUV"
 {
     Properties
     {
@@ -40,13 +40,11 @@
             struct Attributes
             {
                 float4 positionOS   : POSITION;
-                float2 uv           : TEXCOORD0;
             };
 
             struct Varyings
             {
-                float2 uv           : TEXCOORD0;
-                float3 positionWS   : TEXCOORD1;
+                float3 positionWS   : TEXCOORD4;
                 float4 positionHCS  : SV_POSITION;
             };
 
@@ -59,9 +57,9 @@
 
                 // GetVertexPositionInputs computes position in different spaces (ViewSpace, WorldSpace, Homogeneous Clip Space)
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(IN.positionOS.xyz);
+
                 OUT.positionHCS = positionInputs.positionCS;
                 OUT.positionWS = positionInputs.positionWS;
-                OUT.uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 return OUT;
             }
 
@@ -69,18 +67,19 @@
             {
                 // shadowCoord is position in shadow light space
                 float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
+                
+                // We pass shadowCoord as input as realtime shadow is computed and stored in mainLight struct.
                 Light mainLight = GetMainLight(shadowCoord);
-                half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
-                color *= mainLight.shadowAttenuation;
-                return color;
+
+                float2 uv = (IN.positionHCS / _ScreenParams.xy) * _BaseMap_ST.xy + _BaseMap_ST.zw;
+                half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+                half3 finalColor = baseColor * mainLight.shadowAttenuation;
+                return half4(finalColor, 1.0);
             }
             ENDHLSL
         }
 
         // Used for rendering shadowmaps
-        // TODO: there's one issue with adding this UsePass here, it won't make this shader compatible with SRP Batcher
-        // as the ShadowCaster pass from Lit shader is using a different UnityPerMaterial CBUFFER. 
-        // Maybe we should add a DECLARE_PASS macro that allows to user to inform the UnityPerMaterial CBUFFER to use?
         UsePass "Universal Render Pipeline/Lit/ShadowCaster"
     }
 }
