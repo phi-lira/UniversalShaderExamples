@@ -49,6 +49,7 @@
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile _ LIGHTMAP_ON
 
+            // Declared SurfaceVertex and SurfaceFragment shaders
             // -------------------------------------
             // Include custom shading helper to create vertex and fragment functions
             // You must declare above SurfaceVertex and SurfaceFragment

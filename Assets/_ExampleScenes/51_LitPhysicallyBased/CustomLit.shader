@@ -76,10 +76,9 @@
             TEXTURE2D(_NormalMap); SAMPLER(sampler_NormalMap);
             TEXTURE2D(_MaskMap);
 
-            #define CUSTOM_LIGHTING_FUNCTION MyCustomLightingFunction
-
             void SurfaceFunction(Varyings IN, out SurfaceData surfaceData)
             {
+                surfaceData = (SurfaceData)0;
                 float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 
                 half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
@@ -108,7 +107,6 @@
                 surfaceData.emission = _Emission.rgb;
                 surfaceData.alpha = 1.0;
             }
-
             ENDHLSL
         }
 

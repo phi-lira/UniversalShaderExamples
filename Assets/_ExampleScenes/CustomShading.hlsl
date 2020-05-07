@@ -36,13 +36,13 @@ struct Varyings
 // User defined surface data.
 struct SurfaceData
 {
-    half3 diffuse;      // diffuse color. should be black for metals.
-    half3 reflectance;  // reflectance color at normal indicence. It's monochromatic for dieletrics.
-    half3 normalWS;     // normal in world space
-    half  ao;           // ambient occlusion
-    half  roughness;    // roughness
-    half3 emission;     // emissive color
-    half  alpha;        // 0 for transparent materials, 1.0 for opaque.
+    half3 diffuse;              // diffuse color. should be black for metals.
+    half3 reflectance;          // reflectance color at normal indicence. It's monochromatic for dieletrics.
+    half3 normalWS;             // normal in world space
+    half  ao;                   // ambient occlusion
+    half  roughness;            // roughness
+    half3 emission;             // emissive color
+    half  alpha;                // 0 for transparent materials, 1.0 for opaque.
 };
 
 struct LightingData 
@@ -55,7 +55,7 @@ struct LightingData
     half NdotL;
     half NdotV;
     half NdotH;
-    half VdotH;
+    half LdotH;
 };
 
 // Forward declaration of SurfaceFunction. This function must be implemented in the shader
@@ -68,6 +68,21 @@ half3 GetPerPixelNormal(TEXTURE2D_PARAM(normalMap, sampler_NormalMap), float2 uv
     half3 bitangent = cross(normal, tangent.xyz) * tangent.w;
     half3 normalTS = UnpackNormal(SAMPLE_TEXTURE2D(normalMap, sampler_NormalMap, uv));
     return normalize(mul(normalTS, half3x3(tangent.xyz, bitangent, normal)));
+}
+
+// Converts perceptual smoothness to roughness and avoid roughness values close to zero.
+// This will prevent division by zero when smoothness approach 1.0 in fp16.
+half PerceptualSmoothnessToRoughnessClamped(half perceptualSmoothness)
+{
+    /// 0.089 perceptual roughness is the min value we can represent in fp16
+    // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
+    half perceptualRoughness = max(1.0 - perceptualSmoothness, 0.089);
+    return PerceptualRoughnessToRoughness(perceptualRoughness);
+}
+
+half V_Kelemen(half LoH)
+{
+    return 0.25 / (LoH * LoH);
 }
 
 // defined in latest URP
@@ -89,15 +104,27 @@ float3 GetWorldSpaceViewDir(float3 positionWS)
 }
 #endif
 
-// Adapted from Unity Environment BDRF Approximation
 half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
 {
+#if 1
+    // Adapted from Unity Environment BDRF Approximation
+    // mmikk
     half fresnelTerm = Pow4(1.0 - NdotV);
-    half grazingTerm = saturate((1.0 - roughness) + f0);
+    half3 grazingTerm = saturate((1.0 - roughness) + f0);
 
     // surfaceReduction = Int D(NdotH) * NdotH * Id(NdotL>0) dH = 1/(roughness^2+1)
     half surfaceReduction = 1.0 / (roughness * roughness + 1.0);
     return lerp(f0, grazingTerm, fresnelTerm) * surfaceReduction;
+#else
+    // Brian Karis - Physically Based Shading in Mobile
+    const half4 c0 = { -1, -0.0275, -0.572, 0.022 };
+    const half4 c1 = { 1, 0.0425, 1.04, -0.04 };
+    half4 r = roughness * c0 + c1;
+    half a004 = min( r.x * r.x, exp2( -9.28 * NdotV ) ) * r.x + r.y;
+    half2 AB = half2( -1.04, 1.04 ) * a004 + r.zw;
+    return f0 * AB.x + AB.y;
+    return half3(0, 0, 0);
+#endif
 }
 
 #ifdef CUSTOM_LIGHTING_FUNCTION
@@ -115,10 +142,10 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
         // CookTorrance
         // inline D_GGX + V_SmithJoingGGX for better code generations
         half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, surfaceData.roughness);
-        half3 F = F_Schlick(surfaceData.reflectance, lightingData.VdotH);
+        half3 F = F_Schlick(surfaceData.reflectance, lightingData.NdotV);
         half3 specular = DV * F;
         half3 finalColor = (diffuse + specular) * lightingData.light.color * lightingData.NdotL;
-        finalColor += environmentReflection + environmentLighting;
+        finalColor += environmentReflection + environmentLighting + surfaceData.emission;
         return half4(finalColor, surfaceData.alpha);
     }
 #endif
@@ -176,7 +203,7 @@ half4 SurfaceFragment(Varyings IN) : SV_Target
     lightingData.NdotL = saturate(dot(surfaceData.normalWS, light.direction));
     lightingData.NdotV = saturate(dot(surfaceData.normalWS, lightingData.viewDirectionWS)) + HALF_MIN;
     lightingData.NdotH = saturate(dot(surfaceData.normalWS, lightingData.halfVector));
-    lightingData.VdotH = saturate(dot(viewDirectionWS, lightingData.halfVector));
+    lightingData.LdotH = saturate(dot(light.direction, lightingData.halfVector));
 
     return CUSTOM_LIGHTING_FUNCTION(surfaceData, lightingData);
 }
