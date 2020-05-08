@@ -84,21 +84,14 @@
                 half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
                 half metallic = _Metallic;
 
-                // 0.089 perceptual roughness is the min value we can represent in fp16
-                // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
-                half perceptualRoughness = max(1.0 - _Smoothness, 0.089);
-                half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
-                
                 // diffuse color is black for metals and baseColor for dieletrics
                 surfaceData.diffuse = ComputeDiffuseColor(baseColor.rgb, metallic);
 
-                // f0 is reflectance at normal incidence. we store f0 in baseColor for metals.
-                // for dieletrics f0 is monochromatic and stored in reflectance value.
                 // Remap reflectance to range [0, 1] - 0.5 maps to 4%, 1.0 maps to 16% (gemstone)
                 // https://google.github.io/filament/Filament.html#materialsystem/parameterization/standardparameters               
                 surfaceData.reflectance = ComputeFresnel0(baseColor.rgb, metallic, _Reflectance * _Reflectance * 0.16);
                 surfaceData.ao = _AmbientOcclusion;
-                surfaceData.roughness = roughness;
+                surfaceData.perceptualRoughness = 1.0 - _Smoothness;
 #ifdef _NORMALMAP
                 surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
 #else

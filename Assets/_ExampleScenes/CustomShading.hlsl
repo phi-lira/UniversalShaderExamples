@@ -40,7 +40,7 @@ struct SurfaceData
     half3 reflectance;          // reflectance color at normal indicence. It's monochromatic for dieletrics.
     half3 normalWS;             // normal in world space
     half  ao;                   // ambient occlusion
-    half  roughness;            // roughness
+    half  perceptualRoughness;  // perceptual roughness. roughness = perceptualRoughness * perceptualRoughness;
     half3 emission;             // emissive color
     half  alpha;                // 0 for transparent materials, 1.0 for opaque.
 };
@@ -52,6 +52,7 @@ struct LightingData
     half3 environmentReflections;
     half3 halfVector;
     half3 viewDirectionWS;
+    half3 reflectionVectorWS;
     half NdotL;
     half NdotV;
     half NdotH;
@@ -132,17 +133,21 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
 #else
     half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData)
     {
+        // 0.089 perceptual roughness is the min value we can represent in fp16
+        // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
+        half perceptualRoughness = max(1.0 - surfaceData.perceptualRoughness, 0.089);
+        half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
+                
         half3 environmentReflection = lightingData.environmentReflections;
-        environmentReflection *= EnvironmentBRDF(surfaceData.reflectance, surfaceData.roughness, lightingData.NdotV);
-
+        environmentReflection *= EnvironmentBRDF(surfaceData.reflectance, roughness, lightingData.NdotV);
+        
         half3 environmentLighting = lightingData.environmentLighting * surfaceData.diffuse;
-
         half3 diffuse = surfaceData.diffuse * Lambert();
         
         // CookTorrance
         // inline D_GGX + V_SmithJoingGGX for better code generations
-        half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, surfaceData.roughness);
-        half3 F = F_Schlick(surfaceData.reflectance, lightingData.NdotV);
+        half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, roughness);
+        half3 F = F_Schlick(surfaceData.reflectance, lightingData.LdotH);
         half3 specular = DV * F;
         half3 finalColor = (diffuse + specular) * lightingData.light.color * lightingData.NdotL;
         finalColor += environmentReflection + environmentLighting + surfaceData.emission;
@@ -190,16 +195,17 @@ half4 SurfaceFragment(Varyings IN) : SV_Target
     LightingData lightingData;
 
     half3 viewDirectionWS = normalize(GetWorldSpaceViewDir(IN.positionWS));
-    half3 reflectVector = reflect(-viewDirectionWS, surfaceData.normalWS);
-                
+    half3 reflectionVectorWS = reflect(-viewDirectionWS, surfaceData.normalWS);
+    
     // shadowCoord is position in shadow light space
     float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
     Light light = GetMainLight(shadowCoord);
     lightingData.light = light;
     lightingData.environmentLighting = SAMPLE_GI(IN.uvLightmap, SampleSH(surfaceData.normalWS), surfaceData.normalWS) * surfaceData.ao;
-    lightingData.environmentReflections = GlossyEnvironmentReflection(reflectVector, sqrt(surfaceData.roughness), surfaceData.ao);
+    lightingData.environmentReflections = GlossyEnvironmentReflection(reflectionVectorWS, sqrt(surfaceData.perceptualRoughness), surfaceData.ao);
     lightingData.halfVector = normalize(light.direction + viewDirectionWS);
     lightingData.viewDirectionWS = viewDirectionWS;
+    lightingData.reflectionVectorWS = reflectionVectorWS;
     lightingData.NdotL = saturate(dot(surfaceData.normalWS, light.direction));
     lightingData.NdotV = saturate(dot(surfaceData.normalWS, lightingData.viewDirectionWS)) + HALF_MIN;
     lightingData.NdotH = saturate(dot(surfaceData.normalWS, lightingData.halfVector));
