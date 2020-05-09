@@ -29,7 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
         m_Texture: {fileID: 2800000, guid: 26d0b250f59e0f841ba5e17c1d3825ef, type: 3}
-        m_Scale: {x: 15, y: 15}
+        m_Scale: {x: 10, y: 10}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
         m_Texture: {fileID: 0}
@@ -63,7 +63,7 @@ Material:
     - _Reflectance: 0.5
     - _Smoothness: 0
     m_Colors:
-    - _BaseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Emission: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &7017825111196047562
 MonoBehaviour:

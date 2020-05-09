@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: FloatingMahoganyCoat_BronzeLit
   m_Shader: {fileID: 4800000, guid: 50211223aa9fe48bcb8e1dfe5cd83cc7, type: 3}
-  m_ShaderKeywords: _CLEARCOAT _OCCLUSIONMAP
+  m_ShaderKeywords: _CLEARCOAT _NORMALMAP _OCCLUSIONMAP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -29,6 +29,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     - Texture2D_ABD111A:
         m_Texture: {fileID: 2800000, guid: b6ab2245abdaa4a42ac45889aa9861a9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _AmbientOcclusionMap:
+        m_Texture: {fileID: 2800000, guid: a70f1ac2e70003444917f97bdf5b3123, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
@@ -55,8 +59,12 @@ Material:
         m_Texture: {fileID: 2800000, guid: 140e74c1ce570fc4798f10081855ccc9, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _NormalMap:
+    - _MetallicSmoothnessMap:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 2800000, guid: 179dee3bd04bba945995dd57bb9c550b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -86,17 +94,18 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 0
     - _EnableClearCoat: 1
-    - _EnableNormalMap: 0
+    - _EnableNormalMap: 1
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
+    - _NormalMapScale: 0.13
     - _OcclusionStrength: 1
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _Reflectance: 0.5
-    - _Smoothness: 1
+    - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1

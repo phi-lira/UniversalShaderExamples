@@ -134,7 +134,7 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
     {
         // 0.089 perceptual roughness is the min value we can represent in fp16
         // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
-        half perceptualRoughness = max(1.0 - surfaceData.perceptualRoughness, 0.089);
+        half perceptualRoughness = max(surfaceData.perceptualRoughness, 0.089);
         half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
 
         half3 environmentReflection = lightingData.environmentReflections;

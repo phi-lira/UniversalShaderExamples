@@ -22,7 +22,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: CarPaint_DarkRedLit
   m_Shader: {fileID: 4800000, guid: 50211223aa9fe48bcb8e1dfe5cd83cc7, type: 3}
-  m_ShaderKeywords: 
+  m_ShaderKeywords: _NORMALMAP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -42,6 +42,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     - Texture2D_8275A5B2:
         m_Texture: {fileID: 2800000, guid: ab941052b65bab5469d7376db72d99bd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _AmbientOcclusionMap:
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
@@ -68,8 +72,12 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _NormalMap:
+    - _MetallicSmoothnessMap:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 2800000, guid: ab941052b65bab5469d7376db72d99bd, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -100,12 +108,13 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 0
     - _EnableClearCoat: 1
-    - _EnableNormalMap: 0
+    - _EnableNormalMap: 1
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0.777
+    - _NormalMapScale: 0.03
     - _OcclusionStrength: 1
     - _QueueOffset: 0
     - _ReceiveShadows: 1
