@@ -19,6 +19,7 @@
 
         [Toggle(_NORMALMAP)] _EnableNormalMap("Enable Normal Map", Float) = 0.0
         [Normal][NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
+        _NormalMapScale("Normal Map Scale", Float) = 1.0
 
         [Header(Emission)]
         [HDR]_Emission("Emission Color", Color) = (0,0,0,1)
@@ -46,6 +47,7 @@
         half4 _Emission;
         half _ClearCoatSmoothness;
         half _ClearCoatStrength;
+        half _NormalMapScale;
         CBUFFER_END
         ENDHLSL
 
@@ -95,12 +97,12 @@
                 // f0 is reflectance at normal incidence. we store f0 in baseColor for metals.
                 // for dieletrics f0 is monochromatic and stored in reflectance value.
                 // Remap reflectance to range [0, 1] - 0.5 maps to 4%, 1.0 maps to 16% (gemstone)
-                // https://google.github.io/filament/Filament.html#materialsystem/parameterization/standardparameters               
+                // https://google.github.io/filament/Filament.html#materialsystem/parameterization/standardparameters
                 surfaceData.reflectance = ComputeFresnel0(baseColor.rgb, metallic, _Reflectance * _Reflectance * 0.16);
                 surfaceData.ao = SAMPLE_TEXTURE2D(_AmbientOcclusionMap, sampler_BaseMap, uv).g * _AmbientOcclusion;
                 surfaceData.perceptualRoughness = 1.0 - (_Smoothness * metallicSmoothness.a);
 #ifdef _NORMALMAP
-                surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
+                surfaceData.normalWS = GetPerPixelNormalScaled(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS, _NormalMapScale);
 #else
                 surfaceData.normalWS = normalize(IN.normalWS);
 #endif
@@ -110,6 +112,18 @@
 
             half4 ClearCoatLightingFunction(SurfaceData surfaceData, LightingData lightingData)
             {
+                half NdotL = saturate(dot(surfaceData.normalWS, lightingData.light.direction));
+                half NdotV = saturate(dot(surfaceData.normalWS, lightingData.viewDirectionWS)) + HALF_MIN;
+                half NdotH = saturate(dot(surfaceData.normalWS, lightingData.halfDirectionWS));
+                half LdotH = saturate(dot(lightingData.light.direction, lightingData.halfDirectionWS));
+
+                //half3 coatHalfDirectionWS = normalize(lightingData.geometryNormalWS + lightingData.light.direction);
+                //half3 coatReflectionDirectionWS = reflect(-lightingData.viewDirectionWS, lightingData.geometryNormalWS);
+                //half coatNdotL = saturate(dot(lightingData.geometryNormalWS, lightingData.light.direction));
+                //half coatNdotV = saturate(dot(lightingData.geometryNormalWS, lightingData.viewDirectionWS)) + HALF_MIN;
+                //half coatNdotH = saturate(dot(lightingData.geometryNormalWS, coatHalfDirectionWS));
+                //half coatLdotH = saturate(dot(lightingData.light.direction, coatHalfDirectionWS));
+
                 // TODO: Prototype passing these as custom surface data
                 // 0.089 perceptual roughness is the min value we can represent in fp16
                 // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
@@ -120,33 +134,36 @@
                 half perceptualRoughness = max(surfaceData.perceptualRoughness, 0.089);
                 half baseRoughness = PerceptualRoughnessToRoughness(perceptualRoughness);
 
+                half coatD = D_GGX(NdotH, coatRoughness);
+                half coatV = V_Kelemen(LdotH);
+                half3 coatF = F_Schlick(CLEAR_COAT_F0, LdotH);
+                half3 coatSpecular = (coatD * coatV * coatF);
+                
                 // CookTorrance
                 // inline D_GGX + V_SmithJoingGGX for better code generations
-                half baseDV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, baseRoughness);
-                half3 baseReflectance = ConvertF0ForAirInterfaceToF0ForClearCoat15(surfaceData.reflectance);
-                half3 baseF = F_Schlick(baseReflectance, lightingData.LdotH);
+                half baseDV = DV_SmithJointGGX(NdotH, NdotL, NdotV, baseRoughness);
+                half3 baseReflectance = lerp(surfaceData.reflectance, ConvertF0ForAirInterfaceToF0ForClearCoat15(surfaceData.reflectance), coatStrength);
+                half3 baseF = F_Schlick(baseReflectance, LdotH);
                 half3 baseSpecular = (baseDV * baseF);
-
-                half coatD = D_GGX(lightingData.NdotH, coatRoughness);
-                half coatV = V_Kelemen(lightingData.LdotH);
-                half3 coatF = F_Schlick(CLEAR_COAT_F0, lightingData.LdotH) * coatStrength;
-                half3 coatSpecular = (coatD * coatV * coatF);
                 
                 half3 environmentLighting = lightingData.environmentLighting * surfaceData.diffuse;
                 half3 baseDiffuse = surfaceData.diffuse * Lambert();
 
                 half3 baseEnvironmentReflection = lightingData.environmentReflections;
-                baseEnvironmentReflection *= EnvironmentBRDF(baseReflectance, baseRoughness, lightingData.NdotV);
+                baseEnvironmentReflection *= EnvironmentBRDF(baseReflectance, baseRoughness, NdotV);
+                
+                half3 coatEnvironmentReflection = GlossyEnvironmentReflection(lightingData.reflectionDirectionWS, perceptualCoatRoughness, surfaceData.ao); 
+                coatEnvironmentReflection *= EnvironmentBRDF(CLEAR_COAT_F0, coatRoughness, NdotV);
+                //return half4(baseEnvironmentReflection * (1.0 - coatF * coatStrength), 1.0);
+                //return half4(coatEnvironmentReflection, 1.0);
+                //return half4(baseEnvironmentReflection * (1.0 - coatF * coatStrength) + coatEnvironmentReflection, 1.0);
+                
+                half3 fd = baseDiffuse * lightingData.light.color * NdotL + environmentLighting;
+                half3 fr = baseSpecular * lightingData.light.color * NdotL + baseEnvironmentReflection;
+                half3 fc = coatSpecular * lightingData.light.color * NdotL + coatEnvironmentReflection;
 
-                half3 coatEnvironmentReflection = GlossyEnvironmentReflection(lightingData.reflectionVectorWS, perceptualCoatRoughness, surfaceData.ao); 
-                coatEnvironmentReflection *= EnvironmentBRDF(CLEAR_COAT_F0, coatRoughness, lightingData.NdotV);
-
-                half3 fd = baseDiffuse * lightingData.light.color * lightingData.NdotL + environmentLighting;
-                half3 fr = baseSpecular * lightingData.light.color * lightingData.NdotL + baseEnvironmentReflection;
-                half3 fc = coatSpecular * lightingData.light.color * lightingData.NdotL + coatEnvironmentReflection;
-
-                half3 finalColor = (fd + fr * (1.0 - coatF)) * (1.0 - coatF) + fc;
-                finalColor += surfaceData.emission;
+                half3 emission = surfaceData.emission;
+                half3 finalColor = (emission + fd + fr) * (1.0 - coatF * coatStrength) + fc * coatStrength;
                 return half4(finalColor, surfaceData.alpha);
             }
             ENDHLSL
