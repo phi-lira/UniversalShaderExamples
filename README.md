@@ -40,14 +40,14 @@ No direct lighting. Global Illumination (skylight + SH and Lightamps) + realtime
 
 ### 51 Lit Physically Based
 Physically Based Lit shader supporting metallic workflow.
-![LitPhysicallyBased](../images/Scene51.png?raw=true)
+![LitPhysicallyBased](../images/Scene051.png?raw=true)
 
 ### 52 Cleat Coat Physically Based
 Cleat Coat Physically Based evaluates a second BDRF for thin coat layer.
 From left to right: car flakes, carbon filter, lacquered wood
 Top spheres are without the coat layer, using the standard Lit Physically Based shader.
 Bottom spheres are with the Clear Coat Physically Based shader.
-![LitPhysicallyBased](../images/Scene51.png?raw=true)
+![LitPhysicallyBased](../images/Scene052.png?raw=true)
 
 # Resources
 * Mori Knob downloaded from Morgan McGuire's [Computer Graphics Archive](https://casual-effects.com/data)
