@@ -44,10 +44,13 @@ Physically Based Lit shader supporting metallic workflow.
 
 ### 52 Cleat Coat Physically Based
 Cleat Coat Physically Based evaluates a second BDRF for thin coat layer.
-From left to right: car flakes, carbon filter, lacquered wood
-Top spheres are without the coat layer, using the standard Lit Physically Based shader.
-Bottom spheres are with the Clear Coat Physically Based shader.
 ![LitPhysicallyBased](../images/Scene052.png?raw=true)
+
+From left to right: car flakes, carbon filter, lacquered wood.
+
+Top spheres are without the coat layer, using the standard Lit Physically Based shader.
+
+Bottom spheres are with the Clear Coat Physically Based shader.
 
 # Resources
 * Mori Knob downloaded from Morgan McGuire's [Computer Graphics Archive](https://casual-effects.com/data)
