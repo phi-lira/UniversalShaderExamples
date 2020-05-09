@@ -54,7 +54,6 @@ struct LightingData
     half3 viewDirectionWS;
     half3 reflectionDirectionWS;
     half3 normalWS;
-    half3 geometryNormalWS;
     half NdotL;
     half NdotV;
     half NdotH;
@@ -133,28 +132,26 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
 #else
     half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData)
     {
-        half NdotL = saturate(dot(surfaceData.normalWS, lightingData.light.direction));
-        half NdotV = saturate(dot(surfaceData.normalWS, lightingData.viewDirectionWS)) + HALF_MIN;
-        half NdotH = saturate(dot(surfaceData.normalWS, lightingData.halfDirectionWS));
-        half LdotH = saturate(dot(lightingData.light.direction, lightingData.halfDirectionWS));
-
         // 0.089 perceptual roughness is the min value we can represent in fp16
         // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
         half perceptualRoughness = max(1.0 - surfaceData.perceptualRoughness, 0.089);
         half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
 
         half3 environmentReflection = lightingData.environmentReflections;
-        environmentReflection *= EnvironmentBRDF(surfaceData.reflectance, roughness, NdotV);
+        environmentReflection *= EnvironmentBRDF(surfaceData.reflectance, roughness, lightingData.NdotV);
 
         half3 environmentLighting = lightingData.environmentLighting * surfaceData.diffuse;
         half3 diffuse = surfaceData.diffuse * Lambert();
 
         // CookTorrance
         // inline D_GGX + V_SmithJoingGGX for better code generations
-        half DV = DV_SmithJointGGX(NdotH, NdotL, NdotV, roughness);
-        half3 F = F_Schlick(surfaceData.reflectance, LdotH);
+        half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, roughness);
+        
+        // for microfacet fresnel we use H instead of N. In this case LdotH == VdotH, we use LdotH as it
+        // seems to be more widely used convetion in the industry.
+        half3 F = F_Schlick(surfaceData.reflectance, lightingData.LdotH);
         half3 specular = DV * F;
-        half3 finalColor = (diffuse + specular) * lightingData.light.color * NdotL;
+        half3 finalColor = (diffuse + specular) * lightingData.light.color * lightingData.NdotL;
         finalColor += environmentReflection + environmentLighting + surfaceData.emission;
         return half4(finalColor, surfaceData.alpha);
     }
@@ -212,7 +209,10 @@ half4 SurfaceFragment(Varyings IN) : SV_Target
     lightingData.viewDirectionWS = viewDirectionWS;
     lightingData.reflectionDirectionWS = reflectionDirectionWS;
     lightingData.normalWS = surfaceData.normalWS;
-    lightingData.geometryNormalWS = IN.normalWS;
+    lightingData.NdotL = saturate(dot(surfaceData.normalWS, lightingData.light.direction));
+    lightingData.NdotV = saturate(dot(surfaceData.normalWS, lightingData.viewDirectionWS)) + HALF_MIN;
+    lightingData.NdotH = saturate(dot(surfaceData.normalWS, lightingData.halfDirectionWS));
+    lightingData.LdotH = saturate(dot(lightingData.light.direction, lightingData.halfDirectionWS));
 
     return CUSTOM_LIGHTING_FUNCTION(surfaceData, lightingData);
 }

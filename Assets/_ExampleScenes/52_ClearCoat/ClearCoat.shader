@@ -112,19 +112,9 @@
 
             half4 ClearCoatLightingFunction(SurfaceData surfaceData, LightingData lightingData)
             {
-                half NdotL = saturate(dot(surfaceData.normalWS, lightingData.light.direction));
-                half NdotV = saturate(dot(surfaceData.normalWS, lightingData.viewDirectionWS)) + HALF_MIN;
-                half NdotH = saturate(dot(surfaceData.normalWS, lightingData.halfDirectionWS));
-                half LdotH = saturate(dot(lightingData.light.direction, lightingData.halfDirectionWS));
-
-                //half3 coatHalfDirectionWS = normalize(lightingData.geometryNormalWS + lightingData.light.direction);
-                //half3 coatReflectionDirectionWS = reflect(-lightingData.viewDirectionWS, lightingData.geometryNormalWS);
-                //half coatNdotL = saturate(dot(lightingData.geometryNormalWS, lightingData.light.direction));
-                //half coatNdotV = saturate(dot(lightingData.geometryNormalWS, lightingData.viewDirectionWS)) + HALF_MIN;
-                //half coatNdotH = saturate(dot(lightingData.geometryNormalWS, coatHalfDirectionWS));
-                //half coatLdotH = saturate(dot(lightingData.light.direction, coatHalfDirectionWS));
-
-                // TODO: Prototype passing these as custom surface data
+                ///////////////////////////////////////////////////////////////
+                // Parametrization                                            /
+                ///////////////////////////////////////////////////////////////
                 // 0.089 perceptual roughness is the min value we can represent in fp16
                 // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
                 half perceptualCoatRoughness = max(1.0 - _ClearCoatSmoothness, 0.089);
@@ -134,36 +124,56 @@
                 half perceptualRoughness = max(surfaceData.perceptualRoughness, 0.089);
                 half baseRoughness = PerceptualRoughnessToRoughness(perceptualRoughness);
 
-                half coatD = D_GGX(NdotH, coatRoughness);
-                half coatV = V_Kelemen(LdotH);
-                half3 coatF = F_Schlick(CLEAR_COAT_F0, LdotH);
-                half3 coatSpecular = (coatD * coatV * coatF);
-                
-                // CookTorrance
-                // inline D_GGX + V_SmithJoingGGX for better code generations
-                half baseDV = DV_SmithJointGGX(NdotH, NdotL, NdotV, baseRoughness);
+                // We recompute reflectance for base layer as we are not considering air as interface
+                // ConvertF0ForAirInterfaceToF0ForClearCoat15 converts reflectance considering IOR of clear coat instead of air.
                 half3 baseReflectance = lerp(surfaceData.reflectance, ConvertF0ForAirInterfaceToF0ForClearCoat15(surfaceData.reflectance), coatStrength);
-                half3 baseF = F_Schlick(baseReflectance, LdotH);
-                half3 baseSpecular = (baseDV * baseF);
-                
+
+                ///////////////////////////////////////////////////////////////
+                // Environment                                                /
+                ///////////////////////////////////////////////////////////////
+                // pre-integrated diffuse is stored in either SH or lightmap
                 half3 environmentLighting = lightingData.environmentLighting * surfaceData.diffuse;
-                half3 baseDiffuse = surfaceData.diffuse * Lambert();
 
+                // split sum approaximation. 
+                // pre-integrated specular D stored in cubemap, roughness store in different mips
+                // DG term is analytical
                 half3 baseEnvironmentReflection = lightingData.environmentReflections;
-                baseEnvironmentReflection *= EnvironmentBRDF(baseReflectance, baseRoughness, NdotV);
+                baseEnvironmentReflection *= EnvironmentBRDF(baseReflectance, baseRoughness, lightingData.NdotV);
                 
+                // split sum approximation with F0 = CLEAR_COAT_F0
                 half3 coatEnvironmentReflection = GlossyEnvironmentReflection(lightingData.reflectionDirectionWS, perceptualCoatRoughness, surfaceData.ao); 
-                coatEnvironmentReflection *= EnvironmentBRDF(CLEAR_COAT_F0, coatRoughness, NdotV);
-                //return half4(baseEnvironmentReflection * (1.0 - coatF * coatStrength), 1.0);
-                //return half4(coatEnvironmentReflection, 1.0);
-                //return half4(baseEnvironmentReflection * (1.0 - coatF * coatStrength) + coatEnvironmentReflection, 1.0);
-                
-                half3 fd = baseDiffuse * lightingData.light.color * NdotL + environmentLighting;
-                half3 fr = baseSpecular * lightingData.light.color * NdotL + baseEnvironmentReflection;
-                half3 fc = coatSpecular * lightingData.light.color * NdotL + coatEnvironmentReflection;
+                coatEnvironmentReflection *= EnvironmentBRDF(CLEAR_COAT_F0, coatRoughness, lightingData.NdotV);
 
+                ///////////////////////////////////////////////////////////////
+                // Direct Light Contribution                                  /
+                ///////////////////////////////////////////////////////////////
+                half3 baseDiffuse = surfaceData.diffuse * Lambert();
+                
+                // Base Specular BDRF
+                // inline D_GGX + V_SmithJoingGGX for better code generations
+                half baseDV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, lightingData.NdotV, baseRoughness);
+                half3 baseF = F_Schlick(baseReflectance, lightingData.LdotH);
+                half3 baseSpecular = (baseDV * baseF);
+
+                // Clear Specular Coat BRDF - We assume coat to be dieletric, this allows for a simpler visibility term
+                // We use V_Kelemen instead of V_SmithJoingGGX
+                half coatD = D_GGX(lightingData.NdotH, coatRoughness);
+                half coatV = V_Kelemen(lightingData.LdotH);
+                half3 coatF = F_Schlick(CLEAR_COAT_F0, lightingData.LdotH);
+                half3 coatSpecular = (coatD * coatV * coatF);
+
+                ///////////////////////////////////////////////////////////////
+                // Irradiance and layer blending                              /
+                ///////////////////////////////////////////////////////////////
+                half3 irradiance = lightingData.light.color * lightingData.NdotL;
+                baseDiffuse = baseDiffuse * irradiance + environmentLighting;
+                baseSpecular = baseSpecular * irradiance + baseEnvironmentReflection;
+                coatSpecular = coatSpecular * irradiance + coatEnvironmentReflection;
+
+                // Coat Blending from glTF 
+                // https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat
                 half3 emission = surfaceData.emission;
-                half3 finalColor = (emission + fd + fr) * (1.0 - coatF * coatStrength) + fc * coatStrength;
+                half3 finalColor = (emission + baseDiffuse + baseSpecular) * (1.0 - coatF * coatStrength) + coatSpecular * coatStrength;
                 return half4(finalColor, surfaceData.alpha);
             }
             ENDHLSL
