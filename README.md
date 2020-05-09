@@ -1,5 +1,6 @@
 # Universal Shader Examples
-###### This project contains a collection of shader examples for [Universal Render Pipeline](https://unity.com/srp/universal-render-pipeline). 
+###### This project contains a collection of shader examples for [Universal Render Pipeline](https://unity.com/srp/universal-render-pipeline).
+
 #### Requisites:
 - Unity 2019.3.9f1 or later 
 - UniversalRP 7.3.1 or later
@@ -33,15 +34,23 @@ Screen space uv texture mapping.
 ![SceenSpaceUV](../images/Scene04.png?raw=true)
 
 ## Lit Examples
-### 50 BakedIndirect
+### 50 Baked Lighting Only
 No direct lighting. Global Illumination (skylight + SH and Lightamps) + realtime shadows.
-![UnlitTexture](../images/Scene05.png?raw=true)
+![UnlitTexture](../images/Scene050.png?raw=true)
 
-### 51 LitPhysicallyBased
+### 51 Lit Physically Based
 Physically Based Lit shader supporting metallic workflow.
-![LitPhysicallyBased](../images/Scene06.png?raw=true)
+![LitPhysicallyBased](../images/Scene51.png?raw=true)
+
+### 52 Cleat Coat Physically Based
+Cleat Coat Physically Based evaluates a second BDRF for thin coat layer.
+From left to right: car flakes, carbon filter, lacquered wood
+Top spheres are without the coat layer, using the standard Lit Physically Based shader.
+Bottom spheres are with the Clear Coat Physically Based shader.
+![LitPhysicallyBased](../images/Scene51.png?raw=true)
 
 # Resources
 * Mori Knob downloaded from Morgan McGuire's [Computer Graphics Archive](https://casual-effects.com/data)
 * UV grid textures downloaded from [Helloluxx](https://helloluxx.com/tutorials/cinema4d-2/cinema4d-materials/uv-grids/)
 * MatCap textures from [Nidorx Github](https://github.com/nidorx/matcaps)
+* Clear Coat Materials from [Unity Measured Material Library](https://github.com/Unity-Technologies/MeasuredMaterialLibraryURP)
