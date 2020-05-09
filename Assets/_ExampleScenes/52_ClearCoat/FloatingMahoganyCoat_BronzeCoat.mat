@@ -58,7 +58,7 @@ Material:
     - _DieletricF0: 0.5
     - _EnableMaskMap: 0
     - _EnableNormalMap: 1
-    - _Metallic: 1
+    - _Metallic: 0
     - _NormalMapScale: 0.13
     - _Reflectance: 0.5
     - _Smoothness: 0
