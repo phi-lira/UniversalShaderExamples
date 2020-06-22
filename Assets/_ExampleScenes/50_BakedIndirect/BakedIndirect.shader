@@ -53,7 +53,7 @@
             // -------------------------------------
             // Include custom shading helper to create vertex and fragment functions
             // You must declare above SurfaceVertex and SurfaceFragment
-            #include "../CustomShading.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);

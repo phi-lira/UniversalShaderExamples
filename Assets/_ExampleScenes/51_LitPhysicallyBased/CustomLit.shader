@@ -72,7 +72,7 @@
 
             // -------------------------------------
             // Include custom shading helper to create vertex and fragment functions
-            #include "../CustomShading.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
 
             // -------------------------------------
             // Textures are declared in global scope
