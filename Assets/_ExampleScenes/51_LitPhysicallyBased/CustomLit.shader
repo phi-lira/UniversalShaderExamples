@@ -98,7 +98,7 @@
                 // https://google.github.io/filament/Filament.html#materialsystem/parameterization/standardparameters
                 surfaceData.reflectance = ComputeFresnel0(baseColor.rgb, metallic, _Reflectance * _Reflectance * 0.16);
                 surfaceData.ao = SAMPLE_TEXTURE2D(_AmbientOcclusionMap, sampler_BaseMap, uv).g * _AmbientOcclusion;
-                surfaceData.perceptualRoughness = 1.0 - (_Smoothness * metallicSmoothness.a);
+                surfaceData.roughness = 1.0 - (_Smoothness * metallicSmoothness.a);
 #ifdef _NORMALMAP
                 surfaceData.normalWS = GetPerPixelNormalScaled(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS, _NormalMapScale);
 #else

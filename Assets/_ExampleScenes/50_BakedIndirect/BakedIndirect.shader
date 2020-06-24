@@ -37,6 +37,7 @@
             #pragma fragment SurfaceFragment
             
             // Defines a custom lighting function
+            #define CUSTOM_GI_FUNCTION GlobalIllumination
             #define CUSTOM_LIGHTING_FUNCTION BakedIndirectLighting
 
             // -------------------------------------
@@ -76,9 +77,14 @@
                 surfaceData.alpha = 1.0;
             }
 
-            half4 BakedIndirectLighting(CustomSurfaceData surfaceData, LightingData lightingData)
+            half3 BakedIndirectLighting(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
             {
-                return half4(surfaceData.diffuse + lightingData.environmentLighting, surfaceData.alpha);
+                return half3(0, 0, 0);
+            }
+            
+            half3 GlobalIllumination(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
+            {
+                return surfaceData.diffuse + environmentLighting * surfaceData.ao;
             }
             ENDHLSL
         }
