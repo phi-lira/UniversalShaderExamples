@@ -2,25 +2,19 @@
 {
     Properties
     {
+    	
         [MainColor] _BaseColor("BaseColor", Color) = (1,1,1,1)
         [MainTexture] _BaseMap("BaseMap", 2D) = "white" {}
         [Normal] _NormalMap("NormalMap", 2D) = "bump" {}
         _AmbientOcclusion("AmbientOcclusion", Range(0, 1)) = 1.0    
+    
     }
-    
-    
-    
-    Subshader
-{
-Tags{"RenderPipeline" = "UniversalRenderPipeline"}
-HLSLINCLUDE
 
+    HLSLINCLUDE
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
+    
         // Defines a custom lighting function
-        #define CUSTOM_GI_FUNCTION GlobalIllumination
         #define CUSTOM_LIGHTING_FUNCTION BakedIndirectLighting
-                
-        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
-
 
         // -------------------------------------
         // Material variables. They need to be declared in UnityPerMaterial
@@ -59,87 +53,55 @@ HLSLINCLUDE
             return half3(0, 0, 0);
         }
         
-        half3 GlobalIllumination(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
+        half3 CustomGlobalIllumination(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
         {
             return surfaceData.diffuse + environmentLighting * surfaceData.ao;
         }
     
-ENDHLSL
-Pass
-{
-    Name "ForwardLit"
-    Tags{"LightMode" = "UniversalForward"}
-
-    Blend One Zero
-    ZWrite On
-    Cull Back
-   
-    HLSLPROGRAM
-
-    #pragma vertex SurfaceVertex
-    #pragma fragment SurfaceFragment
-
-    // -------------------------------------
-    // Universal Render Pipeline keywords
-    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
-    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
-    #pragma multi_compile _ _SHADOWS_SOFT
-    #pragma multi_compile _ DIRLIGHTMAP_COMBINED
-    #pragma multi_compile _ LIGHTMAP_ON
-    
     ENDHLSL
-}
-Pass
-{
-    Name "DepthOnly"
-    Tags{"LightMode" = "DepthOnly"}
 
-    Blend One Zero
-    ZWrite On
-    ColorMask 0
-    Cull Back
+    Subshader
+    {
+        Tags { "RenderPipeline" = "UniversalRenderPipeline" }
+        Pass
+        {
+            Name "ForwardLit"
+            Tags{"LightMode" = "UniversalForward"}
 
-    HLSLPROGRAM
+            
+
+            HLSLPROGRAM
+            
+            #pragma vertex SurfaceVertex
+    		#pragma fragment SurfaceFragment
+
+    		
+
+    		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+    		
+
+            // -------------------------------------
+            // Universal Pipeline keywords
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _MIXED_LIGHTING_SUBTRACTIVE
+
+            // -------------------------------------
+            // Unity defined keywords
+            #pragma multi_compile_fragment _ DIRLIGHTMAP_COMBINED
+            #pragma multi_compile _ LIGHTMAP_ON
+            #pragma multi_compile_fog
+
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
+            ENDHLSL
+        }
+    }
     
-    #pragma vertex SurfaceVertex
-    #pragma fragment SurfaceFragmentDepthOnly
-
-    // -------------------------------------
-    // Universal Render Pipeline keywords
-    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
-    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
-    #pragma multi_compile _ _SHADOWS_SOFT
-    #pragma multi_compile _ DIRLIGHTMAP_COMBINED
-    #pragma multi_compile _ LIGHTMAP_ON
     
-    ENDHLSL
-}
-Pass
-{
-    Name "ShadowCaster"
-    Tags{"LightMode" = "ShadowCaster"}
-
-    Blend One Zero
-    ZWrite On
-    ColorMask 0
-    Cull Back
-
-    HLSLPROGRAM
-    
-    #pragma vertex SurfaceVertexShadowCaster
-    #pragma fragment SurfaceFragmentDepthOnly
-
-    // -------------------------------------
-    // Universal Render Pipeline keywords
-    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
-    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
-    #pragma multi_compile _ _SHADOWS_SOFT
-    #pragma multi_compile _ DIRLIGHTMAP_COMBINED
-    #pragma multi_compile _ LIGHTMAP_ON
-    
-    ENDHLSL
-}
-}
-
-
 }

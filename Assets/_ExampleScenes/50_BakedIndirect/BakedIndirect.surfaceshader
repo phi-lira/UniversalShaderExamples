@@ -10,10 +10,7 @@ Shader "Universal Render Pipeline/Custom/BakedIndirect"
     
     SURFACESHADER
         // Defines a custom lighting function
-        #define CUSTOM_GI_FUNCTION GlobalIllumination
         #define CUSTOM_LIGHTING_FUNCTION BakedIndirectLighting
-                
-        $CUSTOMINCLUDES
 
         // -------------------------------------
         // Material variables. They need to be declared in UnityPerMaterial
@@ -52,11 +49,9 @@ Shader "Universal Render Pipeline/Custom/BakedIndirect"
             return half3(0, 0, 0);
         }
         
-        half3 GlobalIllumination(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
+        half3 CustomGlobalIllumination(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
         {
             return surfaceData.diffuse + environmentLighting * surfaceData.ao;
         }
     ENDSURFACESHADER
-    
-    $BUILDSUBSHADERS
 }

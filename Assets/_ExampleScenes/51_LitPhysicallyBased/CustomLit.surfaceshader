@@ -25,8 +25,6 @@ Shader "Universal Render Pipeline/Custom/SurfaceLit"
     }
     
     SURFACESHADER
-        $CUSTOMINCLUDES
-
         // -------------------------------------
         // Material Keywords
         #pragma shader_feature _NORMALMAP
@@ -79,6 +77,4 @@ Shader "Universal Render Pipeline/Custom/SurfaceLit"
             surfaceData.alpha = 1.0;
         }
     ENDSURFACESHADER
-    
-    $BUILDSUBSHADERS
 }
