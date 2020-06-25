@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: FloatingMahoganyCoat_BronzeLit
-  m_Shader: {fileID: 4800000, guid: 50211223aa9fe48bcb8e1dfe5cd83cc7, type: 3}
+  m_Shader: {fileID: 4800000, guid: 860e6fd0381214a8ca5d8d6a98ae7203, type: 3}
   m_ShaderKeywords: _CLEARCOAT _NORMALMAP _OCCLUSIONMAP
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -121,3 +121,4 @@ Material:
     - _Emission: {r: 0, g: 0, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+  m_BuildTextureStacks: []

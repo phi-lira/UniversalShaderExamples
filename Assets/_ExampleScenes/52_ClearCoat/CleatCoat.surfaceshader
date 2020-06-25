@@ -69,6 +69,14 @@ Shader "Universal Render Pipeline/Custom/CleatCoat"
             surfaceData.reflectance = ComputeFresnel0(baseColor.rgb, metallic, _Reflectance * _Reflectance * 0.16);
             surfaceData.ao = SAMPLE_TEXTURE2D(_AmbientOcclusionMap, sampler_BaseMap, uv).g * _AmbientOcclusion;
             surfaceData.roughness = 1.0 - (_Smoothness * metallicSmoothness.a);
+
+            // Modify Roughness of base layer
+            half ieta = lerp(1.0h, CLEAR_COAT_IETA, _ClearCoatStrength);
+            half coatRoughnessScale = Sq(ieta);
+            half sigma = RoughnessToVariance(PerceptualRoughnessToRoughness(surfaceData.roughness));
+            surfaceData.roughness = RoughnessToPerceptualRoughness(VarianceToRoughness(sigma * coatRoughnessScale));
+            surfaceData.reflectance = lerp(surfaceData.reflectance, ConvertF0ForAirInterfaceToF0ForClearCoat15(surfaceData.reflectance), _ClearCoatStrength);
+
 #ifdef _NORMALMAP
             surfaceData.normalWS = GetPerPixelNormalScaled(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS, _NormalMapScale);
 #else
@@ -85,7 +93,7 @@ Shader "Universal Render Pipeline/Custom/CleatCoat"
 
             // We recompute reflectance for base layer as we are not considering air as interface
             // ConvertF0ForAirInterfaceToF0ForClearCoat15 converts reflectance considering IOR of clear coat instead of air.
-            half3 baseReflectance = lerp(surfaceData.reflectance, ConvertF0ForAirInterfaceToF0ForClearCoat15(surfaceData.reflectance), _ClearCoatStrength);
+            half3 baseReflectance = surfaceData.reflectance;
             
             // split sum approaximation. 
             // pre-integrated specular D stored in cubemap, roughness store in different mips
@@ -107,7 +115,9 @@ Shader "Universal Render Pipeline/Custom/CleatCoat"
             
             // Coat Blending from glTF 
             // https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat
-            return baseEnvironmentLighting + (1.0 - coatF - coatStrength) + coatEnvironmentReflection * coatStrength;
+            half attenuation = (1.0 - coatF - coatStrength);
+
+            return baseEnvironmentLighting * (1.0 - coatF * coatStrength) + coatEnvironmentReflection * coatStrength;
         }
         
         half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
@@ -122,10 +132,7 @@ Shader "Universal Render Pipeline/Custom/CleatCoat"
             half coatStrength = _ClearCoatStrength;
             
             half baseRoughness = surfaceData.roughness;
-            
-            // We recompute reflectance for base layer as we are not considering air as interface
-            // ConvertF0ForAirInterfaceToF0ForClearCoat15 converts reflectance considering IOR of clear coat instead of air.
-            half3 baseReflectance = lerp(surfaceData.reflectance, ConvertF0ForAirInterfaceToF0ForClearCoat15(surfaceData.reflectance), coatStrength);
+            half3 baseReflectance = surfaceData.reflectance;
 
             ///////////////////////////////////////////////////////////////
             // Direct Light Contribution                                  /
@@ -138,7 +145,7 @@ Shader "Universal Render Pipeline/Custom/CleatCoat"
             half baseDV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, NdotV, baseRoughness);
             half3 baseF = F_Schlick(baseReflectance, lightingData.LdotH);
             half3 baseSpecular = (baseDV * baseF);
-
+            
             // Clear Specular Coat BRDF - We assume coat to be dieletric, this allows for a simpler visibility term
             // We use V_Kelemen instead of V_SmithJoingGGX
             half coatD = D_GGX(lightingData.NdotH, coatRoughness);
