@@ -81,6 +81,35 @@
             surfaceData.alpha = 1.0;
         }
     
+    
+    half3 GlobalIlluminationFunction(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
+    {
+        half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
+        environmentReflections *= EnvironmentBRDF(surfaceData.reflectance, surfaceData.roughness, NdotV);
+        environmentLighting = environmentLighting * surfaceData.diffuse;
+
+        return (environmentReflections + environmentLighting) * surfaceData.ao;
+    }
+
+
+    half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
+    {
+        half3 diffuse = surfaceData.diffuse * Lambert();
+
+        // CookTorrance
+        // inline D_GGX + V_SmithJoingGGX for better code generations
+        half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
+        half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, NdotV, surfaceData.roughness);
+
+        // for microfacet fresnel we use H instead of N. In this case LdotH == VdotH, we use LdotH as it
+        // seems to be more widely used convetion in the industry.
+        half3 F = F_Schlick(surfaceData.reflectance, lightingData.LdotH);
+        half3 specular = DV * F;
+        half3 finalColor = (diffuse + specular) * lightingData.light.color * lightingData.NdotL;
+        return finalColor;
+    }
+
+
     ENDHLSL
 
     Subshader
