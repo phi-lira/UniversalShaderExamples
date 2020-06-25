@@ -8,6 +8,10 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
 
         [Header(VertAnim)]
         _NoiseStrength("_NoiseStrength", Range(-4,4)) = 1
+
+        [Header(Outline)]
+        _OutlineThickness("Outline Thickness", Float) = 0.1
+        _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
     }
     
     SURFACESHADER
@@ -18,6 +22,8 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
         float4 _BaseMap_ST;
         half4 _BaseColor;
         float _NoiseStrength;
+        float _OutlineThickness;
+        float4 _OutlineColor;
         CBUFFER_END
     
         // -------------------------------------
@@ -43,4 +49,52 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
             surfaceData.alpha = 1.0;
         }
     ENDSURFACESHADER
+
+    CUSTOMPASS
+        Pass 
+        {
+            Name "OUTLINE"
+            Cull Front
+            ZWrite On
+            ColorMask RGB
+            Blend SrcAlpha OneMinusSrcAlpha
+        
+            HLSLPROGRAM
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            
+            #pragma vertex vert
+            #pragma fragment frag
+            
+            struct OutlineAttributes 
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+            };
+        
+            struct OutlineVaryings 
+            {
+                float4 positionCS : SV_POSITION;
+                half4 color : COLOR;
+            };
+            
+            OutlineVaryings vert(OutlineAttributes IN) 
+            {
+                OutlineVaryings output = (OutlineVaryings)0;
+                
+                IN.positionOS.xyz += IN.normalOS.xyz * _OutlineThickness;
+                
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(IN.positionOS.xyz);
+                output.positionCS = vertexInput.positionCS;
+                
+                output.color = _OutlineColor;
+                return output;
+            }
+            
+            half4 frag(OutlineVaryings IN) : SV_Target
+            {
+                return IN.color;
+            }
+            ENDHLSL
+        }
+    ENDCUSTOMPASS
 }

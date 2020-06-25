@@ -9,6 +9,10 @@
 
         [Header(VertAnim)]
         _NoiseStrength("_NoiseStrength", Range(-4,4)) = 1
+
+        [Header(Outline)]
+        _OutlineThickness("Outline Thickness", Float) = 0.1
+        _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
     
     }
 
@@ -22,17 +26,19 @@
         float4 _BaseMap_ST;
         half4 _BaseColor;
         float _NoiseStrength;
+        float _OutlineThickness;
+        float4 _OutlineColor;
         CBUFFER_END
     
         // -------------------------------------
         // Textures are declared in global scope
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
-        void VertexModificationFunction(inout Attributes IN)
+        void VertexModificationFunction(Attributes IN)
         {
             // vertex modification adapted from NiloCat:
             // https://github.com/ColinLeung-NiloCat/UnityURP-SurfaceShaderSolution/blob/master/Assets/NiloCat/NiloURPSurfaceShader/ExampleSurfaceShaders/NiloURPSurfaceShader_Example.shader
-            IN.positionOS += sin(_Time.y * IN.positionOS * 10) * _NoiseStrength * 0.0125; //random sin() vertex anim
+            IN.positionOS += sin(_Time.y * dot(float3(1,1,1), IN.positionOS) * 10) * _NoiseStrength * 0.0125; //random sin() vertex anim
         }
     
         void SurfaceFunction(Varyings IN, out CustomSurfaceData surfaceData)
@@ -179,10 +185,57 @@
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertex
             #pragma fragment SurfaceFragmentDepthOnly
-
             
             ENDHLSL
-        }	
+        }
+
+        
+        Pass 
+        {
+            Name "OUTLINE"
+            Cull Front
+            ZWrite On
+            ColorMask RGB
+            Blend SrcAlpha OneMinusSrcAlpha
+        
+            HLSLPROGRAM
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            
+            #pragma vertex vert
+            #pragma fragment frag
+            
+            struct OutlineAttributes 
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+            };
+        
+            struct OutlineVaryings 
+            {
+                float4 positionCS : SV_POSITION;
+                half4 color : COLOR;
+            };
+            
+            OutlineVaryings vert(OutlineAttributes IN) 
+            {
+                OutlineVaryings output = (OutlineVaryings)0;
+                
+                IN.positionOS.xyz += IN.normalOS.xyz * _OutlineThickness;
+                
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(IN.positionOS.xyz);
+                output.positionCS = vertexInput.positionCS;
+                
+                output.color = _OutlineColor;
+                return output;
+            }
+            
+            half4 frag(OutlineVaryings IN) : SV_Target
+            {
+                return IN.color;
+            }
+            ENDHLSL
+        }
+    
     }
     
     
