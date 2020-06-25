@@ -171,6 +171,17 @@
         }
     
     
+    void VertexModificationFunction(inout Attributes IN)
+    {
+    }
+
+
+    half4 FinalColorFunction(half4 inColor)
+    {
+        return inColor;
+    }
+
+
     ENDHLSL
 
     Subshader
