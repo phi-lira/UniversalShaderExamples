@@ -1,0 +1,52 @@
+Shader "Universal Render Pipeline/Custom/Matcap"
+{
+    Properties
+    {
+        [Header(Surface)]
+        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
+        [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
+        [Normal][NoScaleOffset] _NormalMap("NormalMap", 2D) = "bump" {}    
+        [NoScaleOffset]_MatCap("MatCap", 2D) = "black" {}
+        _MatCapBlend("Matcap Blend", Range(0, 1)) = 0.25 
+    }
+    
+    SURFACESHADER
+        // -------------------------------------
+        // Material variables. They need to be declared in UnityPerMaterial
+        // to be able to be cached by SRP Batcher
+        CBUFFER_START(UnityPerMaterial)
+        float4 _BaseMap_ST;
+        half4 _BaseColor;
+        half _MatCapBlend;
+        CBUFFER_END
+    
+        // -------------------------------------
+        // Textures are declared in global scope
+        TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+
+        TEXTURE2D(_NormalMap);
+        SAMPLER(sampler_NormalMap);
+
+        TEXTURE2D(_MatCap);
+        SAMPLER(sampler_MatCap);
+
+        void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
+        {
+            float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
+            half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+
+            half3 normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
+            half3 normalVS = TransformWorldToViewDir(normalWS);
+            float2 uvMatCap = normalVS.xy * 0.5 + 0.5;
+
+            surfaceData.diffuse = baseColor.rgb;
+            surfaceData.alpha = baseColor.a;
+            surfaceData.emission = SAMPLE_TEXTURE2D(_MatCap, sampler_MatCap, uvMatCap) * _MatCapBlend;
+        }
+
+        half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
+        {
+            return surfaceData.diffuse * lightingData.light.shadowAttenuation * (1.0 - _MatCapBlend);
+        }
+    ENDSURFACESHADER
+}

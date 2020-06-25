@@ -42,9 +42,8 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
             IN.positionOS.xyz += GetNoise(IN.positionOS.xyz);
         }
     
-        void SurfaceFunction(Varyings IN, out CustomSurfaceData surfaceData)
+        void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
-            surfaceData = (CustomSurfaceData)0;
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
             half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
 
