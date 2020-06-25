@@ -30,11 +30,16 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
         // Textures are declared in global scope
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
-        void VertexModificationFunction(Attributes IN)
+        // vertex modification adapted from NiloCat:
+        // https://github.com/ColinLeung-NiloCat/UnityURP-SurfaceShaderSolution/blob/master/Assets/NiloCat/NiloURPSurfaceShader/ExampleSurfaceShaders/NiloURPSurfaceShader_Example.shader
+        float3 GetNoise(float3 positionOS)
         {
-            // vertex modification adapted from NiloCat:
-            // https://github.com/ColinLeung-NiloCat/UnityURP-SurfaceShaderSolution/blob/master/Assets/NiloCat/NiloURPSurfaceShader/ExampleSurfaceShaders/NiloURPSurfaceShader_Example.shader
-            IN.positionOS += sin(_Time.y * dot(float3(1,1,1), IN.positionOS) * 10) * _NoiseStrength * 0.0125; //random sin() vertex anim
+            return sin(_Time.y * 10.0 * positionOS) * _NoiseStrength * 0.0125; //random sin() vertex anim
+        }    
+
+        void VertexModificationFunction(inout Attributes IN)
+        {
+            IN.positionOS.xyz += GetNoise(IN.positionOS.xyz);
         }
     
         void SurfaceFunction(Varyings IN, out CustomSurfaceData surfaceData)
@@ -58,7 +63,7 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
             ZWrite On
             ColorMask RGB
             Blend SrcAlpha OneMinusSrcAlpha
-        
+
             HLSLPROGRAM
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             
@@ -82,6 +87,7 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
                 OutlineVaryings output = (OutlineVaryings)0;
                 
                 IN.positionOS.xyz += IN.normalOS.xyz * _OutlineThickness;
+                IN.positionOS.xyz += GetNoise(IN.positionOS.xyz);
                 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(IN.positionOS.xyz);
                 output.positionCS = vertexInput.positionCS;
