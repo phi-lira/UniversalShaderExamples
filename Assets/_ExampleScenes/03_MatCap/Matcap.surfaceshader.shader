@@ -15,24 +15,15 @@
     HLSLINCLUDE
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
     
-        // -------------------------------------
-        // Material variables. They need to be declared in UnityPerMaterial
-        // to be able to be cached by SRP Batcher
         CBUFFER_START(UnityPerMaterial)
         float4 _BaseMap_ST;
         half4 _BaseColor;
         half _MatCapBlend;
         CBUFFER_END
     
-        // -------------------------------------
-        // Textures are declared in global scope
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
-
-        TEXTURE2D(_NormalMap);
-        SAMPLER(sampler_NormalMap);
-
-        TEXTURE2D(_MatCap);
-        SAMPLER(sampler_MatCap);
+        TEXTURE2D(_NormalMap); SAMPLER(sampler_NormalMap);
+        TEXTURE2D(_MatCap); SAMPLER(sampler_MatCap);
 
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {

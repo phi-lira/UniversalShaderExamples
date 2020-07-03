@@ -1,0 +1,37 @@
+Shader "Universal Render Pipeline/Custom/ScreenSpaceUV"
+{
+    Properties
+    {
+        [Header(Surface)]
+        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
+        [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
+        _DetailMap ("DetailMap", 2D) = "gray" {}
+    }
+    
+    SURFACESHADER
+        // -------------------------------------
+        // Material variables. They need to be declared in UnityPerMaterial
+        // to be able to be cached by SRP Batcher
+        CBUFFER_START(UnityPerMaterial)
+        float4 _BaseMap_ST;
+        half4 _BaseColor;
+        float4 _DetailMap_ST;
+        CBUFFER_END
+    
+        // -------------------------------------
+        // Textures are declared in global scope
+        TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+        TEXTURE2D(_DetailMap); SAMPLER(sampler_DetailMap);
+
+        void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
+        {
+            float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
+            half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            float2 screenSpaceUV = (IN.positionCS / _ScreenParams.xy) * _BaseMap_ST.xy + _BaseMap_ST.zw;
+
+            half4 detailColor = SAMPLE_TEXTURE2D(_DetailMap, sampler_DetailMap, screenSpaceUV);
+            surfaceData.diffuse = baseColor.rgb;
+            surfaceData.diffuse *= detailColor;
+        }
+    ENDSURFACESHADER
+}

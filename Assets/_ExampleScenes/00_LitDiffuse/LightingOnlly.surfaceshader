@@ -1,0 +1,9 @@
+Shader "Universal Render Pipeline/Custom/LightingOnly"
+{
+	SURFACESHADER
+    void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
+    {
+        surfaceData.diffuse = 1;
+    }
+    ENDSURFACESHADER
+}

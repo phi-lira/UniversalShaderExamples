@@ -12,37 +12,23 @@
     HLSLINCLUDE
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
     
-        // -------------------------------------
-        // Material variables. They need to be declared in UnityPerMaterial
-        // to be able to be cached by SRP Batcher
         CBUFFER_START(UnityPerMaterial)
         float4 _BaseMap_ST;
         half4 _BaseColor;
         CBUFFER_END
     
-        // -------------------------------------
-        // Textures are declared in global scope
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
     
-        void VertexModificationFunction(inout Attributes IN)
-        {
-        }
-
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
-
-            surfaceData.diffuse = baseColor.rgb;
-            surfaceData.alpha = baseColor.a;
+            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
         }
 
         half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
         {
             return surfaceData.diffuse * lightingData.light.shadowAttenuation;
         }
-
-        
     
     
     half3 GlobalIlluminationFunction(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
@@ -52,6 +38,11 @@
         environmentLighting = environmentLighting * surfaceData.diffuse;
 
         return (environmentReflections + environmentLighting) * surfaceData.ao;
+    }
+
+
+    void VertexModificationFunction(inout Attributes IN)
+    {
     }
 
 

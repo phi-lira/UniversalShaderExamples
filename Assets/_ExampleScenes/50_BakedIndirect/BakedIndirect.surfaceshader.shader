@@ -37,12 +37,7 @@
             surfaceData = (CustomSurfaceData)0;
             surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
             surfaceData.ao = _AmbientOcclusion;
-#ifdef _NORMALMAP
             surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
-#else
-            surfaceData.normalWS = normalize(IN.normalWS);
-#endif
-            surfaceData.alpha = 1.0;
         }
 
         half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
@@ -164,10 +159,11 @@
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertex
             #pragma fragment SurfaceFragmentDepthOnly
-
             
             ENDHLSL
-        }	
+        }
+
+        
     }
     
     

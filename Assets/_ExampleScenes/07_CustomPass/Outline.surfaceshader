@@ -1,13 +1,10 @@
-Shader "Universal Render Pipeline/Custom/VertexAnimation"
+Shader "Universal Render Pipeline/Custom/Outline"
 {
     Properties
     {
         [Header(Surface)]
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
         [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
-
-        [Header(VertAnim)]
-        _NoiseStrength("_NoiseStrength", Range(-4,4)) = 1
 
         [Header(Outline)]
         _OutlineThickness("Outline Thickness", Float) = 0.1
@@ -30,18 +27,6 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
         // Textures are declared in global scope
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
 
-        // vertex modification adapted from NiloCat:
-        // https://github.com/ColinLeung-NiloCat/UnityURP-SurfaceShaderSolution/blob/master/Assets/NiloCat/NiloURPSurfaceShader/ExampleSurfaceShaders/NiloURPSurfaceShader_Example.shader
-        float3 GetNoise(float3 positionOS)
-        {
-            return sin(_Time.y * 10.0 * positionOS) * _NoiseStrength * 0.0125; //random sin() vertex anim
-        }    
-
-        void VertexModificationFunction(inout Attributes IN)
-        {
-            IN.positionOS.xyz += GetNoise(IN.positionOS.xyz);
-        }
-    
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
@@ -86,7 +71,6 @@ Shader "Universal Render Pipeline/Custom/VertexAnimation"
                 OutlineVaryings output = (OutlineVaryings)0;
                 
                 IN.positionOS.xyz += IN.normalOS.xyz * _OutlineThickness;
-                IN.positionOS.xyz += GetNoise(IN.positionOS.xyz);
                 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(IN.positionOS.xyz);
                 output.positionCS = vertexInput.positionCS;

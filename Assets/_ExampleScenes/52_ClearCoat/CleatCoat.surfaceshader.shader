@@ -279,10 +279,11 @@
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertex
             #pragma fragment SurfaceFragmentDepthOnly
-
             
             ENDHLSL
-        }	
+        }
+
+        
     }
     
     

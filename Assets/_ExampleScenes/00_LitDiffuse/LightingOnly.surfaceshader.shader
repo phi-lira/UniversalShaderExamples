@@ -6,31 +6,26 @@
         [Header(Surface)]
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
         [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
+        [Normal][NoScaleOffset] _NormalMap("NormalMap", 2D) = "bump" {}    
     
     }
 
     HLSLINCLUDE
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
     
-        // -------------------------------------
-        // Material variables. They need to be declared in UnityPerMaterial
-        // to be able to be cached by SRP Batcher
         CBUFFER_START(UnityPerMaterial)
         float4 _BaseMap_ST;
         half4 _BaseColor;
         CBUFFER_END
     
-        // -------------------------------------
-        // Textures are declared in global scope
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
-    
+        TEXTURE2D(_NormalMap); SAMPLER(sampler_NormalMap);
+
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
-
-            // diffuse color is black for metals and baseColor for dieletrics
-            surfaceData.diffuse = baseColor.rgb;
+            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
         }
     
     

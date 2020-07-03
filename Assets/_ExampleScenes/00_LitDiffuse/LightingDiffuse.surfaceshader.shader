@@ -1,4 +1,4 @@
-﻿Shader "Universal Render Pipeline/Custom/VertexAnimation"
+﻿Shader "Universal Render Pipeline/Custom/LightingDiffuse"
 {
     Properties
     {
@@ -6,55 +6,26 @@
         [Header(Surface)]
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1,1)
         [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
-
-        [Header(VertAnim)]
-        _NoiseStrength("_NoiseStrength", Range(-4,4)) = 1
-
-        [Header(Outline)]
-        _OutlineThickness("Outline Thickness", Float) = 0.1
-        _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
+        [Normal][NoScaleOffset] _NormalMap("NormalMap", 2D) = "bump" {}    
     
     }
 
     HLSLINCLUDE
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
     
-        // -------------------------------------
-        // Material variables. They need to be declared in UnityPerMaterial
-        // to be able to be cached by SRP Batcher
         CBUFFER_START(UnityPerMaterial)
         float4 _BaseMap_ST;
         half4 _BaseColor;
-        float _NoiseStrength;
-        float _OutlineThickness;
-        float4 _OutlineColor;
         CBUFFER_END
     
-        // -------------------------------------
-        // Textures are declared in global scope
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+        TEXTURE2D(_NormalMap); SAMPLER(sampler_NormalMap);
 
-        // vertex modification adapted from NiloCat:
-        // https://github.com/ColinLeung-NiloCat/UnityURP-SurfaceShaderSolution/blob/master/Assets/NiloCat/NiloURPSurfaceShader/ExampleSurfaceShaders/NiloURPSurfaceShader_Example.shader
-        float3 GetNoise(float3 positionOS)
-        {
-            return sin(_Time.y * 10.0 * positionOS) * _NoiseStrength * 0.0125; //random sin() vertex anim
-        }    
-
-        void VertexModificationFunction(inout Attributes IN)
-        {
-            IN.positionOS.xyz += GetNoise(IN.positionOS.xyz);
-        }
-    
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
-
-            // diffuse color is black for metals and baseColor for dieletrics
-            surfaceData.diffuse = baseColor.rgb;
-            surfaceData.normalWS = normalize(IN.normalWS);
-            surfaceData.alpha = 1.0;
+            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
         }
     
     
@@ -70,19 +41,34 @@
 
     half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
     {
+#if DIVIDE_BY_PI
         half3 diffuse = surfaceData.diffuse * Lambert();
+#else
+        half3 diffuse = surfaceData.diffuse * LambertNoPI();
+#endif
+
+        half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
 
         // CookTorrance
+#if DIVIDE_BY_PI
         // inline D_GGX + V_SmithJoingGGX for better code generations
-        half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
         half DV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, NdotV, surfaceData.roughness);
-
+#else
+        half D = D_GGXNoPI(lightingData.NdotH, surfaceData.roughness);
+        half V = V_SmithJointGGX(lightingData.NdotL, NdotV, surfaceData.roughness);
+        half DV = D * V;
+#endif
         // for microfacet fresnel we use H instead of N. In this case LdotH == VdotH, we use LdotH as it
         // seems to be more widely used convetion in the industry.
         half3 F = F_Schlick(surfaceData.reflectance, lightingData.LdotH);
         half3 specular = DV * F;
         half3 finalColor = (diffuse + specular) * lightingData.light.color * lightingData.NdotL;
         return finalColor;
+    }
+
+
+    void VertexModificationFunction(inout Attributes IN)
+    {
     }
 
 
@@ -194,53 +180,6 @@
         }
 
         
-        Pass 
-        {
-            Name "OUTLINE"
-            Cull Front
-            ZWrite On
-            ColorMask RGB
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            HLSLPROGRAM
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            
-            #pragma vertex vert
-            #pragma fragment frag
-            
-            struct OutlineAttributes 
-            {
-                float4 positionOS : POSITION;
-                float3 normalOS : NORMAL;
-            };
-        
-            struct OutlineVaryings 
-            {
-                float4 positionCS : SV_POSITION;
-                half4 color : COLOR;
-            };
-            
-            OutlineVaryings vert(OutlineAttributes IN) 
-            {
-                OutlineVaryings output = (OutlineVaryings)0;
-                
-                IN.positionOS.xyz += IN.normalOS.xyz * _OutlineThickness;
-                IN.positionOS.xyz += GetNoise(IN.positionOS.xyz);
-                
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(IN.positionOS.xyz);
-                output.positionCS = vertexInput.positionCS;
-                
-                output.color = _OutlineColor;
-                return output;
-            }
-            
-            half4 frag(OutlineVaryings IN) : SV_Target
-            {
-                return IN.color;
-            }
-            ENDHLSL
-        }
-    
     }
     
     
