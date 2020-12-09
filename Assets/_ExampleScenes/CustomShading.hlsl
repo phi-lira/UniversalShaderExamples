@@ -34,7 +34,7 @@ struct Varyings
 };
 
 // User defined surface data.
-struct SurfaceData
+struct CustomSurfaceData
 {
     half3 diffuse;              // diffuse color. should be black for metals.
     half3 reflectance;          // reflectance color at normal indicence. It's monochromatic for dieletrics.
@@ -61,7 +61,7 @@ struct LightingData
 };
 
 // Forward declaration of SurfaceFunction. This function must be implemented in the shader
-void SurfaceFunction(Varyings IN, out SurfaceData surfaceData);
+void SurfaceFunction(Varyings IN, out CustomSurfaceData surfaceData);
 
 // Convert normal from tangent space to space of TBN matrix
 // f.ex, if normal and tangent are passed in world space, per-pixel normal will return in world space.
@@ -128,9 +128,9 @@ half3 EnvironmentBRDF(half3 f0, half roughness, half NdotV)
 }
 
 #ifdef CUSTOM_LIGHTING_FUNCTION
-    half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData);
+    half4 CUSTOM_LIGHTING_FUNCTION(CustomSurfaceData surfaceData, LightingData lightingData);
 #else
-    half4 CUSTOM_LIGHTING_FUNCTION(SurfaceData surfaceData, LightingData lightingData)
+    half4 CUSTOM_LIGHTING_FUNCTION(CustomSurfaceData surfaceData, LightingData lightingData)
     {
         // 0.089 perceptual roughness is the min value we can represent in fp16
         // to avoid denorm/division by zero as we need to do 1 / (pow(perceptualRoughness, 4)) in GGX
@@ -191,7 +191,7 @@ Varyings SurfaceVertex(Attributes IN)
 
 half4 SurfaceFragment(Varyings IN) : SV_Target
 {
-    SurfaceData surfaceData;
+    CustomSurfaceData surfaceData;
     SurfaceFunction(IN, surfaceData);
 
     LightingData lightingData;

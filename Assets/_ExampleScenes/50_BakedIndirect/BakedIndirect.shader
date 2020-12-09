@@ -61,11 +61,11 @@
             TEXTURE2D(_NormalMap);
             SAMPLER(sampler_NormalMap);
 
-            void SurfaceFunction(Varyings IN, out SurfaceData surfaceData)
+            void SurfaceFunction(Varyings IN, out CustomSurfaceData surfaceData)
             {
                 float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 
-                surfaceData = (SurfaceData)0;
+                surfaceData = (CustomSurfaceData)0;
                 surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
                 surfaceData.ao = _AmbientOcclusion;
 #ifdef _NORMALMAP
@@ -76,7 +76,7 @@
                 surfaceData.alpha = 1.0;
             }
 
-            half4 BakedIndirectLighting(SurfaceData surfaceData, LightingData lightingData)
+            half4 BakedIndirectLighting(CustomSurfaceData surfaceData, LightingData lightingData)
             {
                 return half4(surfaceData.diffuse + lightingData.environmentLighting, surfaceData.alpha);
             }

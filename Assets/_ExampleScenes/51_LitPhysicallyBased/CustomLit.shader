@@ -81,9 +81,9 @@
             TEXTURE2D(_MetallicSmoothnessMap);
             TEXTURE2D(_AmbientOcclusionMap);
 
-            void SurfaceFunction(Varyings IN, out SurfaceData surfaceData)
+            void SurfaceFunction(Varyings IN, out CustomSurfaceData surfaceData)
             {
-                surfaceData = (SurfaceData)0;
+                surfaceData = (CustomSurfaceData)0;
                 float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 
                 half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
