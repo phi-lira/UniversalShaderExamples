@@ -105,10 +105,11 @@
                 half3 perturbedNormalTS = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, IN.uv));
                 half3 perturbedNormalVS = normalize(mul(perturbedNormalTS, half3x3(IN.tangentVS.xyz, binormalVS, IN.normalVS)));
                 float2 uvMatCap = perturbedNormalVS.xy * 0.5 + 0.5;
-
-                half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
-                half3 matCapColor = SAMPLE_TEXTURE2D(_MatCap, sampler_MatCap, uvMatCap);
+                
+                half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv).rgb * _BaseColor.rgb;
+                half3 matCapColor = SAMPLE_TEXTURE2D(_MatCap, sampler_MatCap, uvMatCap).rgb;
                 half3 finalColor = lerp(baseColor, matCapColor, _MatCapBlend);
+                
                 finalColor *= mainLight.shadowAttenuation;
                 return half4(finalColor, 1.0);
             }

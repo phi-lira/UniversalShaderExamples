@@ -66,7 +66,7 @@
                 float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 
                 surfaceData = (CustomSurfaceData)0;
-                surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+                surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb * _BaseColor.rgb;
                 surfaceData.ao = _AmbientOcclusion;
 #ifdef _NORMALMAP
                 surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);

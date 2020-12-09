@@ -22,7 +22,9 @@ struct Attributes
 struct Varyings
 {
     float2 uv                       : TEXCOORD0;
+#if LIGHTMAP_ON
     float2 uvLightmap               : TEXCOORD1;
+#endif
     float3 positionWS               : TEXCOORD2;
     half3  normalWS                 : TEXCOORD3;
 
