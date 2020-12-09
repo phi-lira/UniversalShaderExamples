@@ -72,7 +72,7 @@
 
             // -------------------------------------
             // Include custom shading helper to create vertex and fragment functions
-            #include "../CustomShading.hlsl"
+            #include "Assets/ShaderLibrary/CustomShading.hlsl"
 
             // -------------------------------------
             // Textures are declared in global scope
