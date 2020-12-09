@@ -55,7 +55,7 @@ Shader "Universal Render Pipeline/Custom/SurfaceLit"
             surfaceData = (CustomSurfaceData)0;
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
             
-            half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb * _BaseColor.rgb;
             half4 metallicSmoothness = SAMPLE_TEXTURE2D(_MetallicSmoothnessMap, sampler_BaseMap, uv);
             half metallic = _Metallic * metallicSmoothness.r;
             // diffuse color is black for metals and baseColor for dieletrics

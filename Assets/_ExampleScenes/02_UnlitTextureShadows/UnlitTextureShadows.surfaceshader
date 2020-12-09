@@ -18,7 +18,7 @@ Shader "Universal Render Pipeline/Custom/UnlitTextureShadows"
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb * _BaseColor.rgb;
         }
 
         half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)

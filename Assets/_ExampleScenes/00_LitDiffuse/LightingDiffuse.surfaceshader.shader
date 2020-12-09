@@ -24,14 +24,14 @@
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb * _BaseColor.rgb;
             surfaceData.normalWS = GetPerPixelNormal(TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap), uv, IN.normalWS, IN.tangentWS);
         }
     
     
     half3 GlobalIlluminationFunction(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
     {
-        half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
+        half NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
         environmentReflections *= EnvironmentBRDF(surfaceData.reflectance, surfaceData.roughness, NdotV);
         environmentLighting = environmentLighting * surfaceData.diffuse;
 
@@ -47,7 +47,7 @@
         half3 diffuse = surfaceData.diffuse * LambertNoPI();
 #endif
 
-        half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
+        half NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
 
         // CookTorrance
 #if DIVIDE_BY_PI

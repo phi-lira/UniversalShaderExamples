@@ -88,7 +88,7 @@ Shader "Universal Render Pipeline/Custom/CleatCoat"
 
         half3 GlobalIlluminationFunction(CustomSurfaceData surfaceData, half3 environmentLighting, half3 environmentReflections, half3 viewDirectionWS)
         {
-            half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
+            half NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
             environmentLighting *= surfaceData.diffuse;
 
             // We recompute reflectance for base layer as we are not considering air as interface
@@ -141,7 +141,7 @@ Shader "Universal Render Pipeline/Custom/CleatCoat"
             
             // Base Specular BDRF
             // inline D_GGX + V_SmithJoingGGX for better code generations
-            half3 NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
+            half NdotV = saturate(dot(surfaceData.normalWS, viewDirectionWS)) + HALF_MIN;
             half baseDV = DV_SmithJointGGX(lightingData.NdotH, lightingData.NdotL, NdotV, baseRoughness);
             half3 baseF = F_Schlick(baseReflectance, lightingData.LdotH);
             half3 baseSpecular = (baseDV * baseF);

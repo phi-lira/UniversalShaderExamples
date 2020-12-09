@@ -72,7 +72,7 @@
                 Light mainLight = GetMainLight(shadowCoord);
 
                 float2 uv = (IN.positionHCS / _ScreenParams.xy) * _BaseMap_ST.xy + _BaseMap_ST.zw;
-                half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+                half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb * _BaseColor.rgb;
                 half3 finalColor = baseColor * mainLight.shadowAttenuation;
                 return half4(finalColor, 1.0);
             }

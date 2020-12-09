@@ -31,7 +31,7 @@ Shader "Universal Render Pipeline/Custom/ScreenSpaceUV"
 
             half4 detailColor = SAMPLE_TEXTURE2D(_DetailMap, sampler_DetailMap, screenSpaceUV);
             surfaceData.diffuse = baseColor.rgb;
-            surfaceData.diffuse *= detailColor;
+            surfaceData.diffuse *= detailColor.rgb;
         }
     ENDSURFACESHADER
 }

@@ -30,7 +30,7 @@ Shader "Universal Render Pipeline/Custom/Outline"
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
 
             // diffuse color is black for metals and baseColor for dieletrics
             surfaceData.diffuse = baseColor.rgb;
