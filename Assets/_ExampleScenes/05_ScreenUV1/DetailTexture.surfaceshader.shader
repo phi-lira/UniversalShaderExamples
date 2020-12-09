@@ -11,7 +11,7 @@
     }
 
     HLSLINCLUDE
-    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
+    #include "Assets/ShaderLibrary/CustomShading.hlsl"
     
         // -------------------------------------
         // Material variables. They need to be declared in UnityPerMaterial
@@ -35,7 +35,7 @@
 
             half4 detailColor = SAMPLE_TEXTURE2D(_DetailMap, sampler_DetailMap, screenSpaceUV);
             surfaceData.diffuse = baseColor.rgb;
-            surfaceData.diffuse *= detailColor;
+            surfaceData.diffuse *= detailColor.rgb;
         }
     
     
@@ -104,7 +104,7 @@
             
     		
 
-    		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+    		#include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
     		
 
             // -------------------------------------
@@ -157,7 +157,7 @@
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+            #include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertexShadowCaster
             #pragma fragment SurfaceFragmentDepthOnly
 
@@ -182,7 +182,7 @@
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+            #include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertex
             #pragma fragment SurfaceFragmentDepthOnly
             

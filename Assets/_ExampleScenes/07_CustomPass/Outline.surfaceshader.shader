@@ -14,7 +14,7 @@
     }
 
     HLSLINCLUDE
-    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
+    #include "Assets/ShaderLibrary/CustomShading.hlsl"
     
         // -------------------------------------
         // Material variables. They need to be declared in UnityPerMaterial
@@ -34,7 +34,7 @@
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            half3 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb * _BaseColor.rgb;
 
             // diffuse color is black for metals and baseColor for dieletrics
             surfaceData.diffuse = baseColor.rgb;
@@ -108,7 +108,7 @@
             
     		
 
-    		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+    		#include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
     		
 
             // -------------------------------------
@@ -161,7 +161,7 @@
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+            #include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertexShadowCaster
             #pragma fragment SurfaceFragmentDepthOnly
 
@@ -186,7 +186,7 @@
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+            #include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertex
             #pragma fragment SurfaceFragmentDepthOnly
             

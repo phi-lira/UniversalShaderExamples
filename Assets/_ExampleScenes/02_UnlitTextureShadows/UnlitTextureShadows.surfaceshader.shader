@@ -10,7 +10,7 @@
     }
 
     HLSLINCLUDE
-    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/CustomShading.hlsl"
+    #include "Assets/ShaderLibrary/CustomShading.hlsl"
     
         CBUFFER_START(UnityPerMaterial)
         float4 _BaseMap_ST;
@@ -22,7 +22,7 @@
         void SurfaceFunction(Varyings IN, inout CustomSurfaceData surfaceData)
         {
             float2 uv = TRANSFORM_TEX(IN.uv, _BaseMap);
-            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            surfaceData.diffuse = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).rgb * _BaseColor.rgb;
         }
 
         half3 LightingFunction(CustomSurfaceData surfaceData, LightingData lightingData, half3 viewDirectionWS)
@@ -68,7 +68,7 @@
             
     		
 
-    		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+    		#include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
     		
 
             // -------------------------------------
@@ -121,7 +121,7 @@
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+            #include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertexShadowCaster
             #pragma fragment SurfaceFragmentDepthOnly
 
@@ -146,7 +146,7 @@
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceFunctions.hlsl"
+            #include "Assets/ShaderLibrary/SurfaceFunctions.hlsl"
             #pragma vertex SurfaceVertex
             #pragma fragment SurfaceFragmentDepthOnly
             
